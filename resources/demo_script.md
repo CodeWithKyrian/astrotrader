@@ -21,7 +21,7 @@ This complexity creates a barrier to adoption for casual gamers who just want to
 
 This is where Civic Auth transforms the experience by:
 - Letting players sign in with familiar methods like Google
-- Automatically creating an embedded Solana wallet linked to their identity
+- Providing the tools for embedded Solana wallets linked to their identity
 - Eliminating the need for seed phrases or extensions
 - Handling blockchain transactions seamlessly behind the scenes
 - Giving players true ownership of their in-game assets
@@ -44,23 +44,31 @@ This is where Civic Auth shines – players can log in with Google or other fami
 
 ## New User Experience (45 seconds)
 
-For new players, the first login automatically creates an embedded Solana wallet. This happens completely behind the scenes – no seed phrases to write down, no browser extensions to install.
+Since I'm a new player, my first login triggers our application to automatically create an embedded Solana wallet. We've designed our application to do this completely behind the scenes – no seed phrases to write down, no browser extensions to install.
 
-*[Show the wallet initialization prompt if new user]*
+*[Show the wallet initialization process occurring automatically]*
 
-With just one click, Civic creates a secure, non-custodial wallet that the player truly owns.
+With our implementation of Civic Auth, the game creates a secure, non-custodial wallet that I truly own without me having to do anything.
 
-New players are then prompted to claim their starting "Galactic Credits" – our in-game currency.
+Now I'm prompted to claim my starting "Galactic Credits" – the in-game currency I'll need to play.
 
 *[Show the "Claim Starting Package" prompt]*
 
-Let me explain what's happening here: Galactic Credits aren't just arbitrary game points – they're actual SPL tokens on the Solana blockchain. When players claim their starting package, real tokens are transferred to their embedded wallet.
+Let me explain what's happening here: Galactic Credits aren't just arbitrary game points – they're actual SPL tokens on the Solana blockchain. When I claim my starting package, real tokens are transferred to my embedded wallet.
+
+*[Show the confirmation and updated GC balance of 1000]*
+
+Great! I now have 1000 Galactic Credits to start playing with. Let me verify this is a real blockchain token.
+
+*[Switch to browser tab with Solscan and search for the wallet address]*
+
+Here on Solscan, you can see my wallet now has those 1000 Galactic Credits tokens. This is a real SPL token on the Solana blockchain, not just a number in a database.
+
+*[Switch back to game]*
 
 ## Returning User Experience (15 seconds)
 
-For returning players like me, the experience is even smoother. Civic Auth recognizes me, connects to my embedded wallet, and the game loads my last saved state – all in seconds, with no manual wallet connection required.
-
-*[Show the game loading with existing player data]*
+For returning players, the experience is even smoother. Civic Auth recognizes them, connects to their embedded wallet, and the game loads their last saved state – all in seconds, with no manual wallet connection required.
 
 ## Game Interface & Mechanics (30 seconds)
 
@@ -68,7 +76,7 @@ For returning players like me, the experience is even smoother. Civic Auth recog
 
 AstroTrader is a space trading simulation. I command a ship with limited cargo space and fuel, and my goal is to earn profits by trading commodities between planets.
 
-My ship stats are shown here, my current location here, and my Galactic Credits balance is displayed in the top right. This balance is actually pulled directly from my wallet on the Solana blockchain.
+My ship stats are shown here, my current location here, and my Galactic Credits balance is displayed in the top right. Notice my ship has a cargo capacity of 20 units - this will be important later.
 
 ## Trading Mechanics (45 seconds)
 
@@ -108,7 +116,7 @@ Traveling consumes fuel, and I need to refuel at planets. Each planet has differ
 
 When I refuel, it's another blockchain transaction, but Civic's embedded wallet makes this feel like a natural part of the game.
 
-## Ship Upgrades via NFT Blueprints (45 seconds)
+## Ship Upgrades via NFT Blueprints (1 minute)
 
 *[Navigate to Shipyard view]*
 
@@ -117,37 +125,27 @@ Players can improve their ships by acquiring blueprint NFTs. There are two ways 
 1. Discover them while exploring planets
 2. Purchase them directly from the Store
 
-*[Navigate to owned blueprints]*
+*[Show empty blueprints list]*
 
-Any blueprints I own are shown here, and they automatically apply their effects to my ship. For example, this Cargo Expansion blueprint increases my cargo capacity.
+Since I'm a new player, I don't have any blueprints yet. I haven't explored enough of the galaxy to discover any, but let's see what's available in the store.
 
 *[Open the Store modal]*
 
 *[Show the blueprint store]*
 
-The store offers various blueprints for purchase, though they're quite expensive. These are actual NFTs that will be minted to my wallet when purchased.
+The store offers various blueprints for purchase, but they're quite expensive. I don't have enough Credits to buy one yet. These are actual NFTs that would be minted to my wallet when purchased.
 
-*[Log out and log in to account with more credits if necessary]*
+Let me log into an account that already has a blueprint to show you how they work.
 
-Let me switch to an account where I have enough credits to purchase a blueprint.
+*[Switch to another browser window/tab and log in with a different account]*
 
-*[Execute blueprint purchase]*
+*[Navigate to Shipyard view]*
 
-When I purchase this blueprint, two things happen:
-1. GC tokens transfer from my wallet to the treasury
-2. An NFT representing the blueprint is minted directly to my wallet
+Now I've switched to an account that already has the Cargo Expansion blueprint. Notice how it's applied to my ship automatically, increasing my cargo capacity from 20 units to 45 units!
 
-What's amazing is that I truly own this blueprint as an NFT on Solana, but the entire experience feels like a normal game purchase.
+*[Switch to Solscan and show the NFT in the portfolio tab]*
 
-## Civic Auth Integration Benefits (30 seconds)
-
-What makes this special is how Civic Auth enables all these blockchain interactions without any Web3 friction:
-
-1. Players use familiar login methods
-2. The embedded wallet handles all transactions
-3. Players truly own their assets (tokens and NFTs)
-4. No seed phrases or crypto knowledge required
-5. The entire experience feels like a traditional game
+Let me show you that this blueprint is a real NFT on the blockchain. Here on Solscan, under the portfolio tab of this wallet, you can see the Cargo Expansion Blueprint NFT. This player truly owns this upgrade as a digital asset.
 
 ## Conclusion (15 seconds)
 
@@ -160,7 +158,8 @@ Thank you for watching this demo of AstroTrader: Galactic Arbitrage!
 ## Demo Preparation Checklist
 
 - [ ] Set up fresh account for "new user" demo
-- [ ] Set up second account with enough GC to purchase blueprint
+- [ ] Set up second account with blueprints
 - [ ] Practice the flow of traveling between planets with correct commodities
 - [ ] Verify fuel prices on each planet match the script
-- [ ] Check that Terra Prime/Mars Colony arbitrage opportunity exists 
+- [ ] Check that Terra Prime/Mars Colony arbitrage opportunity exists
+- [ ] Have Solscan tabs ready for both accounts 

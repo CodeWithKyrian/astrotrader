@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useUser } from '@civic/auth-web3/react';
 import { PublicKey } from '@solana/web3.js';
 import type { Adapter } from '@solana/wallet-adapter-base';
@@ -21,19 +21,34 @@ export function useCivicWallet() {
 
     const hasWallet = !!user && isExistingWeb3UserContext(userContext);
 
+    // Automatically create wallet if user is logged in but doesn't have a wallet
+    useEffect(() => {
+        const autoCreateWallet = async () => {
+            if (user && !hasWallet && !walletCreationInProgress && userContext) {
+                try {
+                    console.log("Auto-creating wallet for user...");
+                    await (userContext as NewWeb3UserContext).createWallet();
+                    console.log("Wallet created successfully!");
+                } catch (error) {
+                    console.error("Failed to auto-create wallet:", error);
+                }
+            }
+        };
+
+        autoCreateWallet();
+    }, [user, hasWallet, walletCreationInProgress, userContext]);
+
     const walletState = useMemo(() => {
         const isLoggedIn = !!user;
         let publicKey: PublicKey | undefined = undefined;
         let publicKeyString: string | undefined = undefined;
-        let createWalletFn: (() => Promise<void>) | undefined = undefined;
         let sendTransactionFn: SolanaWallet['sendTransaction'] | undefined = undefined;
         let signMessageFn: SolanaWallet['signMessage'] | undefined = undefined;
         let signTransactionFn: SolanaWallet['signTransaction'] | undefined = undefined;
         let signAllTransactionsFn: SolanaWallet['signAllTransactions'] | undefined = undefined;
 
-        if (isLoggedIn) {
-            if (hasWallet) {
-                const walletInstance = userContext.solana.wallet;
+        if (isLoggedIn && hasWallet) {
+            const walletInstance = userContext.solana.wallet;
 
                 publicKeyString = userContext.solana.address;
                 publicKey = new PublicKey(publicKeyString);
@@ -42,9 +57,6 @@ export function useCivicWallet() {
                 signMessageFn = walletInstance.signMessage.bind(walletInstance);
                 signTransactionFn = walletInstance.signTransaction.bind(walletInstance);
                 signAllTransactionsFn = walletInstance.signAllTransactions.bind(walletInstance);
-            } else {
-                createWalletFn = (userContext as NewWeb3UserContext).createWallet;
-            }
         }
 
         return {
@@ -57,7 +69,6 @@ export function useCivicWallet() {
             user,
             signIn,
             signOut,
-            createWallet: createWalletFn,
             sendTransaction: sendTransactionFn,
             signMessage: signMessageFn,
         };
