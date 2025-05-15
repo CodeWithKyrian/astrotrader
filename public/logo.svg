@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Space Ship / Trading Vessel -->
+    <path
+        d="M12 3L4 10L4 20L20 20L20 10L12 3Z"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <!-- Cockpit -->
+    <path
+        d="M12 8L16 11V16H8V11L12 8Z"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <!-- Wings -->
+    <path
+        d="M4 13L1 15V18L4 17"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <path
+        d="M20 13L23 15V18L20 17"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <!-- Engines -->
+    <rect
+        x="7"
+        y="16"
+        width="2"
+        height="4"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <rect
+        x="15"
+        y="16"
+        width="2"
+        height="4"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <!-- Cargo -->
+    <rect
+        x="10"
+        y="12"
+        width="4"
+        height="3"
+        stroke="#22d3ee"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+    />
+    <!-- Star -->
+    <circle
+        cx="19"
+        cy="5"
+        r="1"
+        fill="#22d3ee"
+    />
+</svg> 

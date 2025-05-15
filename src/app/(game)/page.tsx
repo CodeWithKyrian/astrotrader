@@ -331,7 +331,7 @@ export default function AstroTraderPage() {
                         <TabPanel className="react-tabs__tab-panel p-1 sm:p-4 overflow-y-auto flex-grow focus:outline-none bg-transparent relative">
                             {/* Subtle cosmic glow */}
                             <div className="absolute top-20 left-1/3 w-40 h-40 rounded-full bg-cyan-500/5 filter blur-3xl pointer-events-none"></div>
-                            <div className="relative z-10">
+                            <div className="relative z-10 h-full">
                                 <ShipyardView />
                             </div>
                         </TabPanel>

@@ -217,19 +217,6 @@ export function ShipyardView() {
                     </div>
                 )}
             </div>
-
-            {/* Debug Button */}
-            <div className="flex-shrink-0">
-                <button
-                    onClick={handleAwardPlaceholderBlueprint}
-                    className="w-full py-2.5 px-4 bg-blue-900/80 border border-cyan-700/40 hover:bg-blue-800/90 hover:border-cyan-600/60 text-cyan-300 font-medium rounded transition-all shadow-[0_0_15px_rgba(8,145,178,0.2)] hover:shadow-[0_0_15px_rgba(8,145,178,0.3)] backdrop-blur-sm flex items-center justify-center"
-                >
-                    <span className="mr-2">Debug: Get Placeholder Cargo Blueprint</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
-            </div>
         </div>
     );
 }
