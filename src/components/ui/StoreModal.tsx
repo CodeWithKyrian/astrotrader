@@ -284,8 +284,8 @@ export function StoreModal() {
                                     <div className="bg-slate-800/50 rounded-md p-4 mt-6 border border-cyan-800/30">
                                         <h4 className="text-cyan-400 text-sm font-semibold mb-2">Blueprint Info</h4>
                                         <p className="text-gray-400 text-xs leading-relaxed">
-                                            Blueprints are permanent ship upgrades that enhance your vessel's capabilities.
-                                            Once purchased, they remain in your archive and automatically improve your ship's performance.
+                                            Blueprints are permanent ship upgrades that enhance your vessel&apos;s capabilities.
+                                            Once purchased, they remain in your archive and automatically improve your ship&apos;s performance.
                                             Different planets may offer different blueprints.
                                         </p>
                                     </div>

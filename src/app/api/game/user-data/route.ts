@@ -4,6 +4,7 @@ import { getRedisClient } from '@/lib/redis';
 import type { UserData, ShipState } from '@/types/models';
 import { BASE_CARGO_CAPACITY, BASE_MAX_FUEL } from '@/store/gameStore';
 import { planetRepository } from '@/repositories/planet-repository';
+import { getUserSolanaWalletAddress } from '@/lib/solana-server';
 
 
 async function getDefaultUserData(civicUserId: string, solWalletAddress: string): Promise<UserData> {
@@ -29,16 +30,16 @@ async function getDefaultUserData(civicUserId: string, solWalletAddress: string)
 }
 
 // GET: Load user data
-export async function GET(request: Request) {
+export async function GET() {
     try {
         const user = await getUser();
         if (!user || !user.id) {
             return NextResponse.json({ error: 'Unauthorized: No active user session' }, { status: 401 });
         }
 
-        const userSolWalletAddressString = (user as any).solana.address;
+        const userSolWalletAddress = getUserSolanaWalletAddress(user);
 
-        if (!userSolWalletAddressString) {
+        if (!userSolWalletAddress) {
             return NextResponse.json({
                 error: 'User authenticated, but no Solana wallet address found in session. Ensure wallet is created.',
             }, { status: 400 });
@@ -53,13 +54,13 @@ export async function GET(request: Request) {
             console.log(`User data loaded for ${user.id}`);
             return NextResponse.json({ userData, found: true });
         } else {
-            const defaultData = await getDefaultUserData(user.id, userSolWalletAddressString);
+            const defaultData = await getDefaultUserData(user.id, userSolWalletAddress);
             await redis.set(userDataKey, JSON.stringify(defaultData));
             return NextResponse.json({ userData: defaultData, found: false });
         }
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error loading user data:', error);
-        return NextResponse.json({ error: 'Failed to load user data', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to load user data', details: error instanceof Error ? error.message : error }, { status: 500 });
     }
 }
 
@@ -71,9 +72,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized: No active user session' }, { status: 401 });
         }
 
-        const userSolWalletAddressString = (user as any).solana.address;
+        const userSolWalletAddress = getUserSolanaWalletAddress(user);
 
-        if (!userSolWalletAddressString) {
+        if (!userSolWalletAddress) {
             return NextResponse.json({
                 error: 'User authenticated, but no Solana wallet address found in session. Ensure wallet is created.',
             }, { status: 400 });
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
         if (savedDataString) {
             existingData = JSON.parse(savedDataString);
         } else {
-            existingData = await getDefaultUserData(user.id, userSolWalletAddressString);
+            existingData = await getDefaultUserData(user.id, userSolWalletAddress);
         }
 
         if (!existingData) {
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
         const dataToSave: UserData = {
             ...existingData,
             civicUserId: user.id,
-            solWalletAddress: userSolWalletAddressString,
+            solWalletAddress: userSolWalletAddress,
             currentPlanetId: body.currentPlanetId ?? existingData.currentPlanetId,
             ship: body.ship ? { ...existingData.ship, ...body.ship } : existingData.ship,
             hasClaimedInitialCredits: body.hasClaimedInitialCredits ?? existingData.hasClaimedInitialCredits,
@@ -116,11 +117,11 @@ export async function POST(request: Request) {
         await redis.set(userDataKey, JSON.stringify(dataToSave));
 
         console.log(`User data saved for ${user.id}`);
-        
+
         return NextResponse.json({ message: 'User data saved successfully', savedAt: dataToSave.lastSaved, savedData: dataToSave });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error saving user data:', error);
-        return NextResponse.json({ error: 'Failed to save user data', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to save user data', details: error instanceof Error ? error.message : error }, { status: 500 });
     }
 }

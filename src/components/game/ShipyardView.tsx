@@ -4,7 +4,6 @@ import { useGameStore } from '@/store/gameStore';
 import { BlueprintEffectType } from '@/types/blueprints';
 import Image from 'next/image';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
-import toast from 'react-hot-toast';
 import { useShallow } from 'zustand/shallow';
 
 export function ShipyardView() {
@@ -29,22 +28,6 @@ export function ShipyardView() {
     const refreshBlueprints = () => {
         if (publicKey) {
             loadOwnedBlueprints(publicKey);
-        }
-    };
-
-    const handleAwardPlaceholderBlueprint = async () => {
-        try {
-            const response = await fetch('/api/blueprints/award-placeholder', { method: 'POST' });
-            const data = await response.json();
-            if (response.ok) {
-                toast.success(data.message || "Blueprint awarded! Refreshing...");
-                refreshBlueprints(); // Refresh the list
-            } else {
-                toast.error(`Error: ${data.error || data.message || "Could not award blueprint."}`);
-            }
-        } catch (e) {
-            toast.error("Failed to request blueprint award.");
-            console.error(e);
         }
     };
 

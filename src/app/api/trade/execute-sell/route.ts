@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { getUser } from '@civic/auth-web3/nextjs';
 import { PublicKey } from '@solana/web3.js';
 import { transferSplFromServerPool, GALACTIC_CREDITS_MINT } from '@/lib/spl-server';
-import { minterKeypair, treasuryKeypair } from '@/lib/solana-server';
-import { planetRepository } from '@/repositories/planet-repository'; 
+import { getUserSolanaWalletAddress, minterKeypair, treasuryKeypair } from '@/lib/solana-server';
+import { planetRepository } from '@/repositories/planet-repository';
 import { commodityRepository } from '@/repositories/commodity-repository';
-import { Planet, Commodity } from '@/types/models';
+import { Planet, Commodity, PlanetMarketListing } from '@/types/models';
 
 interface ExecuteSellRequestBody {
     commodityId: string;
@@ -20,15 +20,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized: No active user session' }, { status: 401 });
         }
 
-        const userSolWalletAddressString = (user as any).solana.address;
+        const userSolWalletAddress = getUserSolanaWalletAddress(user);
 
-        if (!userSolWalletAddressString) {
+        if (!userSolWalletAddress) {
             return NextResponse.json({
                 error: 'User authenticated, but no Solana wallet address found in session. Ensure wallet is created.',
             }, { status: 400 });
         }
 
-        const userPublicKey = new PublicKey(userSolWalletAddressString);
+        const userPublicKey = new PublicKey(userSolWalletAddress);
 
         const body: ExecuteSellRequestBody = await request.json();
         const { commodityId, quantity, planetId } = body;
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid planet ID' }, { status: 400 });
         }
 
-        const commodityMarketInfo = planet.marketListings.find((c: any) => c.commodityId === commodityId);
+        const commodityMarketInfo = planet.marketListings.find((c: PlanetMarketListing) => c.commodityId === commodityId);
         if (!commodityMarketInfo || !commodityMarketInfo.sellPrice) {
             return NextResponse.json({ error: 'Commodity not bought at this planet or no sell price' }, { status: 400 });
         }
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         const totalPayoutLamports = BigInt(Math.round(quantity * pricePerUnit * Math.pow(10, 6)));
 
         console.log(`Processing sell: User ${userPublicKey.toBase58()} sells ${quantity} of ${commodityId} at ${planetId} for ${pricePerUnit} GC each.`);
-        console.log(`Total payout: ${Number(totalPayoutLamports) / Math.pow(10,6)} GC`);
+        console.log(`Total payout: ${Number(totalPayoutLamports) / Math.pow(10, 6)} GC`);
 
         const signature = await transferSplFromServerPool(
             minterKeypair,          // Wallet to pay transaction fees
@@ -74,13 +74,13 @@ export async function POST(request: Request) {
         return NextResponse.json({
             message: `Successfully sold ${quantity} ${commodityDetails.name}!`,
             signature,
-            creditsAwarded: Number(totalPayoutLamports) / Math.pow(10,6),
+            creditsAwarded: Number(totalPayoutLamports) / Math.pow(10, 6),
         });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error executing sell trade:', error);
-        let errorDetails = error.message || error.toString();
-        if(error.logs) {
+        const errorDetails = error instanceof Error ? error.message : error;
+        if (error instanceof Error && 'logs' in error) {
             console.error("Solana Logs:", error.logs);
         }
         return NextResponse.json({ error: 'Failed to execute sell trade', details: errorDetails }, { status: 500 });

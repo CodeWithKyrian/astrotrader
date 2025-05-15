@@ -94,9 +94,9 @@ export function RefuelView() {
             } else {
                 toast.error(result.reason || "Failed to update fuel state after transaction");
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error purchasing fuel:", error);
-            toast.error(error.message || "An error occurred during the fuel purchase");
+            toast.error(error instanceof Error ? error.message : "An error occurred during the fuel purchase");
         } finally {
             setIsProcessing(false);
         }
@@ -160,7 +160,7 @@ export function RefuelView() {
                         {fuelNeeded <= 0 ? (
                             <div className="bg-slate-800/70 p-4 rounded-md border border-cyan-700/30 text-center mb-6">
                                 <div className="text-green-400 font-semibold mb-1">Fuel Tank Full</div>
-                                <div className="text-gray-400 text-sm">Your ship's fuel tank is already at maximum capacity.</div>
+                                <div className="text-gray-400 text-sm">Your ship&apos;s fuel tank is already at maximum capacity.</div>
                             </div>
                         ) : (
                             <>
@@ -282,8 +282,8 @@ export function RefuelView() {
                             <div className="mt-6 bg-slate-800/80 rounded p-3 border border-cyan-900/30">
                                 <h5 className="text-cyan-200 font-medium text-xs mb-1">Fuel Consumption</h5>
                                 <p className="text-gray-400 text-xs">
-                                    Travel distance and your ship's fuel efficiency determine consumption.
-                                    Engine upgrades from the Trading Guild can reduce your ship's fuel usage.
+                                    Travel distance and your ship&apos;s fuel efficiency determine consumption.
+                                    Engine upgrades from the Trading Guild can reduce your ship&apos;s fuel usage.
                                 </p>
                             </div>
                         </div>

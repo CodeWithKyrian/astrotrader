@@ -7,11 +7,10 @@ import {
 import {
     getOrCreateAssociatedTokenAccount,
     createTransferInstruction,
-    TOKEN_PROGRAM_ID,
     getAssociatedTokenAddressSync,
     getAccount,
 } from '@solana/spl-token';
-import { connection, sendServerSignedTransaction, rewardPoolKeypair as defaultRewardPoolKeypair } from './solana-server';
+import { connection, sendServerSignedTransaction } from './solana-server';
 import { getPublicEnv } from '@/config/environment';
 
 const env = getPublicEnv();
@@ -31,7 +30,7 @@ export async function getSplBalance(
         const accountInfo = await getAccount(connection, associatedTokenAccountAddress, 'confirmed');
         return Number(accountInfo.amount) / Math.pow(10, 6);
     } catch (error) {
-         if (error instanceof Error && error.name === 'TokenAccountNotFoundError') {
+        if (error instanceof Error && error.name === 'TokenAccountNotFoundError') {
             console.log(`Server: Token account not found for ${ownerPublicKey.toBase58()}. Balance 0.`);
         } else {
             console.error('Server: Error fetching SPL balance:', error);

@@ -4,7 +4,6 @@ import { useCallback } from 'react';
 import { useCivicWallet } from './useCivicWallet';
 import { useGameStore } from '@/store/gameStore';
 import { useShallow } from 'zustand/shallow';
-import type { ProcessedBlueprint } from '@/types/blueprints';
 
 /**
  * @deprecated This hook is deprecated. Use the blueprint state from gameStore directly.
@@ -13,11 +12,11 @@ import type { ProcessedBlueprint } from '@/types/blueprints';
  */
 export function useOwnedBlueprints() {
     const { publicKey, hasWallet } = useCivicWallet();
-    const { 
-        ownedBlueprints, 
-        isBlueprintsLoading, 
-        blueprintsError, 
-        loadOwnedBlueprints 
+    const {
+        ownedBlueprints,
+        isBlueprintsLoading,
+        blueprintsError,
+        loadOwnedBlueprints
     } = useGameStore(
         useShallow(state => ({
             ownedBlueprints: state.ownedBlueprints,

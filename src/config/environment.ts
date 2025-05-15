@@ -21,8 +21,8 @@ const publicEnvSchema = z.object({
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
 
-let validatedServerEnv: ServerEnv | null = null;
-let validatedPublicEnv: PublicEnv | null = null;
+const validatedServerEnv: ServerEnv | null = null;
+const validatedPublicEnv: PublicEnv | null = null;
 
 /**
  * Retrieves and validates SERVER-ONLY environment variables.

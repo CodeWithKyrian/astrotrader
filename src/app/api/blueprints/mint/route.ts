@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUser } from '@civic/auth-web3/nextjs';
 import { PublicKey } from '@solana/web3.js';
 import { mintBlueprintNft } from '@/lib/metaplex-server';
-import { minterKeypair as serverMinterKeypair } from '@/lib/solana-server'; 
+import { getUserSolanaWalletAddress, minterKeypair as serverMinterKeypair } from '@/lib/solana-server';
 import { getRedisClient } from '@/lib/redis';
 import { blueprintDefinitionRepository } from '@/repositories/blueprint-definition-repository';
 
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { blueprintId, transactionSignature } = body;
-        
+
         if (!blueprintId) {
             return NextResponse.json({ error: 'Missing blueprintId in request' }, { status: 400 });
         }
@@ -22,14 +22,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized: No active user session' }, { status: 401 });
         }
 
-        const userSolWalletAddressString = (user as any).solana.address;
-        if (!userSolWalletAddressString) {
+        const userSolWalletAddress = getUserSolanaWalletAddress(user);
+        if (!userSolWalletAddress) {
             return NextResponse.json({
                 error: 'User authenticated, but no Solana wallet found in session. Ensure wallet is created.',
             }, { status: 400 });
         }
-        
-        const recipientPublicKey = new PublicKey(userSolWalletAddressString);
+
+        const recipientPublicKey = new PublicKey(userSolWalletAddress);
 
         // TODO: Verify transaction signature
         if (!transactionSignature) {
@@ -47,9 +47,9 @@ export async function POST(request: Request) {
 
         if (alreadyMinted === 'true') {
             console.log(`User ${user.id} already has blueprint: ${blueprintId}`);
-            return NextResponse.json({ 
+            return NextResponse.json({
                 message: 'Blueprint already owned by this user.',
-                alreadyMinted: true 
+                alreadyMinted: true
             }, { status: 200 });
         }
 
@@ -76,11 +76,11 @@ export async function POST(request: Request) {
             alreadyMinted: false,
         });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error minting blueprint via API:', error);
-        return NextResponse.json({ 
-            error: 'Failed to mint blueprint', 
-            details: error.message || error.toString() 
+        return NextResponse.json({
+            error: 'Failed to mint blueprint',
+            details: error instanceof Error ? error.message : error
         }, { status: 500 });
     }
 } 

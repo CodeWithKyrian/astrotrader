@@ -3,7 +3,6 @@
 import { useEffect, useMemo } from 'react';
 import { useUser } from '@civic/auth-web3/react';
 import { PublicKey } from '@solana/web3.js';
-import type { Adapter } from '@solana/wallet-adapter-base';
 import type { ExistingWeb3UserContext, NewWeb3UserContext, SolanaWallet, Web3UserContextType } from '@civic/auth-web3';
 
 /**
@@ -45,18 +44,16 @@ export function useCivicWallet() {
         let sendTransactionFn: SolanaWallet['sendTransaction'] | undefined = undefined;
         let signMessageFn: SolanaWallet['signMessage'] | undefined = undefined;
         let signTransactionFn: SolanaWallet['signTransaction'] | undefined = undefined;
-        let signAllTransactionsFn: SolanaWallet['signAllTransactions'] | undefined = undefined;
 
         if (isLoggedIn && hasWallet) {
             const walletInstance = userContext.solana.wallet;
 
-                publicKeyString = userContext.solana.address;
-                publicKey = new PublicKey(publicKeyString);
+            publicKeyString = userContext.solana.address;
+            publicKey = new PublicKey(publicKeyString);
 
-                sendTransactionFn = walletInstance.sendTransaction.bind(walletInstance);
-                signMessageFn = walletInstance.signMessage.bind(walletInstance);
-                signTransactionFn = walletInstance.signTransaction.bind(walletInstance);
-                signAllTransactionsFn = walletInstance.signAllTransactions.bind(walletInstance);
+            sendTransactionFn = walletInstance.sendTransaction.bind(walletInstance);
+            signMessageFn = walletInstance.signMessage.bind(walletInstance);
+            signTransactionFn = walletInstance.signTransaction.bind(walletInstance);
         }
 
         return {
@@ -70,6 +67,7 @@ export function useCivicWallet() {
             signIn,
             signOut,
             sendTransaction: sendTransactionFn,
+            signTransaction: signTransactionFn,
             signMessage: signMessageFn,
         };
     }, [userContext, user, isUserContextLoading, hasWallet, walletCreationInProgress, signIn, signOut]);

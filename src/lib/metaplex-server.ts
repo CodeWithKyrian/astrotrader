@@ -1,4 +1,4 @@
-import { Metaplex, keypairIdentity, MetaplexFile } from "@metaplex-foundation/js";
+import { Metaplex, keypairIdentity } from "@metaplex-foundation/js";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { connection, minterKeypair as defaultMinterKeypair } from "./solana-server";
 import { BlueprintDefinition } from "@/types/models";
@@ -23,7 +23,7 @@ export async function mintBlueprintNft({
     blueprintDefinition,
     minterKeypair = defaultMinterKeypair,
 }: MintBlueprintNftParams): Promise<{ mintAddress: PublicKey; signature: string }> {
-    
+
     const name = blueprintDefinition.name;
     const metadataUri = blueprintDefinition.metadataUri;
 

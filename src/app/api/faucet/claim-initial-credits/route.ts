@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUser } from '@civic/auth-web3/nextjs';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { transferSplFromServerPool, GALACTIC_CREDITS_MINT, getSplBalance } from '@/lib/spl-server';
-import { rewardPoolKeypair, minterKeypair, connection, sendServerSignedTransaction } from '@/lib/solana-server';
+import { rewardPoolKeypair, minterKeypair, sendServerSignedTransaction, getUserSolanaWalletAddress } from '@/lib/solana-server';
 import { getRedisClient } from '@/lib/redis';
 import type { UserData } from '@/types/models';
 
@@ -10,22 +10,22 @@ const INITIAL_CREDITS_AMOUNT_UI = 1000;
 const INITIAL_CREDITS_LAMPORTS = BigInt(INITIAL_CREDITS_AMOUNT_UI * Math.pow(10, 6));
 const INITIAL_SOL_LAMPORTS = BigInt(Math.floor(0.005 * LAMPORTS_PER_SOL)); // 0.005 SOL
 
-export async function POST(request: Request) {
+export async function POST() {
     try {
         const user = await getUser();
         if (!user || !user.id) {
             return NextResponse.json({ error: 'Unauthorized: No active user session' }, { status: 401 });
         }
 
-        const userSolWalletAddressString = (user as any).solana.address;
+        const userSolWalletAddress = getUserSolanaWalletAddress(user);
 
-        if (!userSolWalletAddressString) {
+        if (!userSolWalletAddress) {
             return NextResponse.json({
                 error: 'User authenticated, but no Solana wallet address found in session. Ensure wallet is created.',
             }, { status: 400 });
         }
 
-        const userPublicKey = new PublicKey(userSolWalletAddressString);
+        const userPublicKey = new PublicKey(userSolWalletAddress);
 
         const redis = getRedisClient();
         const userDataKey = `user:${user.id}:userData`;
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
         if (userData.hasClaimedInitialCredits) {
             const currentBalance = await getSplBalance(userPublicKey, GALACTIC_CREDITS_MINT);
-            
+
             return NextResponse.json({
                 message: 'Initial credits already claimed.',
                 alreadyClaimed: true,
@@ -83,8 +83,8 @@ export async function POST(request: Request) {
             alreadyClaimed: false,
         });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error claiming initial credits:', error);
-        return NextResponse.json({ error: 'Failed to claim initial credits', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to claim initial credits', details: error instanceof Error ? error.message : error }, { status: 500 });
     }
 }

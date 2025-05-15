@@ -1,6 +1,7 @@
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { getServerEnv } from '@/config/environment';
+import { User } from '@civic/auth-web3';
 
 const env = getServerEnv();
 
@@ -26,6 +27,9 @@ export const minterKeypair = loadKeypairFromEnv('MINTER_PRIVATE_KEY', env.MINTER
 export const rewardPoolKeypair = loadKeypairFromEnv('REWARD_POOL_PRIVATE_KEY', env.REWARD_POOL_PRIVATE_KEY);
 export const treasuryKeypair = loadKeypairFromEnv('TREASURY_PRIVATE_KEY', env.TREASURY_PRIVATE_KEY);
 
+export function getUserSolanaWalletAddress(user: User): string | null {
+    return (user as unknown as { solana: { address: string } }).solana.address || null;
+}
 
 export async function sendServerSignedTransaction(
     transaction: Transaction,
@@ -34,12 +38,12 @@ export async function sendServerSignedTransaction(
 ): Promise<string> {
     try {
         if (!transaction.recentBlockhash) {
-             const { blockhash } = await connection.getLatestBlockhash();
-             transaction.recentBlockhash = blockhash;
+            const { blockhash } = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash;
         }
-         if (!transaction.feePayer) {
-             transaction.feePayer = payer.publicKey;
-         }
+        if (!transaction.feePayer) {
+            transaction.feePayer = payer.publicKey;
+        }
         const signature = await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], {
             commitment: 'confirmed',
             skipPreflight: false,
@@ -49,7 +53,7 @@ export async function sendServerSignedTransaction(
     } catch (error) {
         console.error("Error sending server-signed transaction:", error);
         if (error instanceof Error && 'logs' in error) {
-            console.error("Transaction Logs:", (error as any).logs);
+            console.error("Transaction Logs:", error.logs);
         }
         throw error;
     }

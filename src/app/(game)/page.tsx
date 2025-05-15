@@ -27,7 +27,6 @@ export default function AstroTraderPage() {
         isLoggedIn,
         isLoading: isWalletLoading,
         hasWallet,
-        isCreatingWallet,
         user,
         signIn,
         publicKey,
@@ -35,7 +34,6 @@ export default function AstroTraderPage() {
 
     const {
         balance: galacticCredits,
-        isLoading: creditsLoading,
         refreshBalance: refreshCredits
     } = useGalacticCredits();
 
@@ -130,9 +128,9 @@ export default function AstroTraderPage() {
             } else {
                 throw new Error(data.error || "Failed to claim credits.");
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error claiming credits:", error);
-            setClaimError(error.message);
+            setClaimError(error instanceof Error ? error.message : "An unknown error occurred");
         } finally {
             setIsClaiming(false);
         }
@@ -192,7 +190,7 @@ export default function AstroTraderPage() {
                         </h2>
 
                         <p className="mb-6 text-gray-300 text-center">
-                            We're automatically creating your secure Solana wallet. Please wait a moment...
+                            We&apos;re automatically creating your secure Solana wallet. Please wait a moment...
                         </p>
 
                         <div className="flex justify-center">

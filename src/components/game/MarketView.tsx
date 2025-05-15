@@ -4,14 +4,9 @@ import { useGameStore } from '@/store/gameStore';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
 import { useState, useMemo } from 'react';
 import { createTreasuryTransferTransaction } from '@/lib/spl-client';
-import { getPublicEnv } from '@/config/environment';
-import { PublicKey } from '@solana/web3.js';
 import { connection } from '@/lib/solana-client';
 import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'react-hot-toast';
-
-const env = getPublicEnv();
-const TREASURY_PUBLIC_KEY = new PublicKey(env.TREASURY_PUBLIC_KEY);
 
 interface MarketViewProps {
     galacticCredits: number;
@@ -35,7 +30,6 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
         canSellCommodity,
         updateCargoOnSell,
         setIsTrading,
-        isTrading
     } = useGameStore(
         useShallow(state => ({
             userData: state.userData,
@@ -73,7 +67,6 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
         commodityId: string,
         tradeType: 'buy' | 'sell',
         price: number,
-        maxAvailable?: number
     ) => {
         if (!currentPlanet || !userPublicKey || !sendTransaction || !userData || !userData.ship) {
             toast.error("Wallet not connected, user data missing, or planet data missing.");
@@ -171,9 +164,9 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
             }
 
             setQuantities(prev => ({ ...prev, [commodityId]: 0 }));
-        } catch (e: any) {
+        } catch (e) {
             console.error("Trade failed:", e);
-            toast.error(e.message || "An unknown error occurred during trade.");
+            toast.error(e instanceof Error ? e.message : "An unknown error occurred during trade.");
         } finally {
             setTradingState({
                 isTrading: false,
@@ -330,7 +323,7 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
                                                 {marketInfo?.sellPrice && (
                                                     <button
                                                         disabled={tradingState.isTrading || cargoQty <= 0}
-                                                        onClick={() => handleTrade(commodityItem.id, 'sell', marketInfo.sellPrice!, cargoQty)}
+                                                        onClick={() => handleTrade(commodityItem.id, 'sell', marketInfo.sellPrice!)}
                                                         className="flex items-center justify-center rounded-md bg-gradient-to-r from-green-900/80 to-green-700/80 hover:from-green-800 hover:to-green-600 border border-green-700/50 px-3 py-1.5 text-sm font-medium text-white shadow-[0_0_10px_rgba(22,163,74,0.15)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                     >
                                                         {tradingState.isTrading && tradingState.commodityId === commodityItem.id && tradingState.action === 'sell' ? (
