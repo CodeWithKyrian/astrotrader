@@ -2,9 +2,9 @@ import { Metaplex, keypairIdentity } from "@metaplex-foundation/js";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { connection, minterKeypair as defaultMinterKeypair } from "./solana-server";
 import { BlueprintDefinition } from "@/types/models";
+
 const metaplex = Metaplex.make(connection)
     .use(keypairIdentity(defaultMinterKeypair));
-
 
 interface MintBlueprintNftParams {
     recipientPublicKey: PublicKey;

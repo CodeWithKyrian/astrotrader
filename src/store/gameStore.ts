@@ -34,7 +34,7 @@ interface BlueprintState {
 interface ShipActions {
     updateShipCargo: (newCargo: Array<{ commodityId: string; quantity: number }>) => void;
     updateShipFuel: (newFuel: number) => void;
-    updateShipCoreStats: (newCoreStats: Pick<ShipState, 'cargoCapacity' | 'maxFuel'>) => void; // For blueprint effects
+    updateShipCoreStats: (newCoreStats: Pick<ShipState, 'cargoCapacity' | 'maxFuel'>) => void;
 }
 
 interface NavigationActions {
@@ -61,7 +61,7 @@ interface StoreState {
 }
 
 interface RefuelingActions {
-    refuelShip: (amount: number, cost: number, currentGalacticCredits: number) => 
+    refuelShip: (amount: number, cost: number, currentGalacticCredits: number) =>
         { success: boolean; newFuel: number; reason?: string };
 }
 
@@ -80,7 +80,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     fetchGameData: async () => {
         if (get().isGameDataLoaded) return;
-        
+
         try {
             console.log("Fetching game definitions...");
             const [planetsRes, commoditiesRes, blueprintsRes] = await Promise.all([
@@ -115,15 +115,15 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     loadUserData: async () => {
         if (get().isUserDataLoaded && get().userData) return;
-        
+
         try {
             const response = await fetch('/api/game/user-data');
             if (!response.ok) throw new Error('Failed to load user data from server');
-            
+
             const data = await response.json();
             set({ userData: data.userData, isUserDataLoaded: true });
             console.log("Userdata loaded successfully");
-            
+
             // Once user data is loaded, we can attempt to load blueprints if the wallet is connected
             // This will be called by the parent component that manages wallet state
         } catch (error) {
@@ -205,7 +205,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
         get().saveUserData();
     },
-    
+
     // --- Navigation Actions ---
     travelToPlanet: (planetId) => {
         const { planets, userData, isTraveling } = get();
@@ -246,8 +246,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     },
 
-     // --- Market Actions ---
-     canBuyCommodity: (commodityId, quantity, price, currentGalacticCredits) => {
+    // --- Market Actions ---
+    canBuyCommodity: (commodityId, quantity, price, currentGalacticCredits) => {
         const ship = get().userData?.ship;
         if (!ship) return { canAfford: false, hasSpace: false, reason: "Ship data not loaded." };
 
@@ -303,28 +303,28 @@ export const useGameStore = create<GameState>((set, get) => ({
     // --- Store State ---
     isStoreOpen: false,
     setIsStoreOpen: (open) => set({ isStoreOpen: open }),
-    
+
     // --- Refueling Actions ---
     refuelShip: (amount, cost, currentGalacticCredits) => {
         const { userData } = get();
         if (!userData || !userData.ship) {
             return { success: false, newFuel: 0, reason: "Ship data not loaded." };
         }
-        
+
         const { ship } = userData;
-        
+
         if (currentGalacticCredits < cost) {
             return { success: false, newFuel: ship.fuel, reason: "Not enough Galactic Credits." };
         }
-        
+
         if (ship.fuel >= ship.maxFuel) {
             return { success: false, newFuel: ship.fuel, reason: "Fuel tank already full." };
         }
-        
+
         const newFuel = Math.min(ship.fuel + amount, ship.maxFuel);
-        
+
         get().updateShipFuel(newFuel);
-        
+
         return { success: true, newFuel };
     },
 
@@ -337,26 +337,26 @@ export const useGameStore = create<GameState>((set, get) => ({
         try {
             const blueprints = await fetchAndProcessOwnedBlueprints(publicKey);
             set({ ownedBlueprints: blueprints, isBlueprintsLoading: false });
-            
+
             // Apply effects immediately after loading
             get().applyBlueprintEffectsToShip();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to load blueprints';
-            set({ 
+            set({
                 blueprintsError: errorMessage,
                 isBlueprintsLoading: false
             });
             console.error("Error loading blueprints:", error);
         }
     },
-    
+
     applyBlueprintEffectsToShip: () => {
         const { ownedBlueprints, userData } = get();
         if (!userData?.ship) return;
-        
+
         let newCargo = BASE_CARGO_CAPACITY;
         let newFuel = BASE_MAX_FUEL;
-        
+
         if (ownedBlueprints && ownedBlueprints.length > 0) {
             ownedBlueprints.forEach(bp => {
                 if (bp.parsedAttributes.effectType === BlueprintEffectType.INCREASE_CARGO_CAPACITY) {
@@ -365,10 +365,9 @@ export const useGameStore = create<GameState>((set, get) => ({
                 if (bp.parsedAttributes.effectType === BlueprintEffectType.INCREASE_MAX_FUEL) {
                     newFuel += bp.parsedAttributes.effectValue;
                 }
-                // Add more effect types here as needed
             });
         }
-        
+
         // Only update if values changed
         if (newCargo !== userData.ship.cargoCapacity || newFuel !== userData.ship.maxFuel) {
             console.log("Applying blueprint effects to ship:", { cargoCapacity: newCargo, maxFuel: newFuel });

@@ -1,4 +1,12 @@
-import { Metadata, Metaplex, Sft, guestIdentity, isNft, isSft, type Nft } from "@metaplex-foundation/js";
+import {
+    Metaplex,
+    guestIdentity,
+    isNft,
+    isSft,
+    type Nft,
+    type Sft,
+    type Metadata,
+} from "@metaplex-foundation/js";
 import { connection } from "./solana-client";
 import { PublicKey } from "@solana/web3.js";
 import type { ProcessedBlueprint, BlueprintEffectType } from "@/types/blueprints";
@@ -10,7 +18,7 @@ const metaplexGuest = Metaplex.make(connection).use(guestIdentity());
  */
 export async function fetchAndProcessOwnedBlueprints(owner: PublicKey): Promise<ProcessedBlueprint[]> {
     console.log(`Fetching NFTs for owner: ${owner.toBase58()}`);
-    
+
     try {
         const rawAssets = await metaplexGuest.nfts().findAllByOwner({ owner });
         console.log(`Found ${rawAssets.length} raw NFT/SFT entries.`);
@@ -24,7 +32,7 @@ export async function fetchAndProcessOwnedBlueprints(owner: PublicKey): Promise<
                 if (isNft(asset) || isSft(asset)) {
                     fullAsset = asset;
                 } else {
-                    
+
                     try {
                         fullAsset = await metaplexGuest.nfts().load({ metadata: asset as Metadata });
                     } catch (loadErr) {
@@ -73,9 +81,9 @@ export async function fetchAndProcessOwnedBlueprints(owner: PublicKey): Promise<
                 // console.warn(`Asset ${fullAsset.address.toBase58()} ("${fullAsset.name}") has no JSON metadata or attributes after loading.`);
             }
         }
-        
+
         console.log(`Processed ${processedBlueprints.length} blueprints.`);
-        
+
         return processedBlueprints;
     } catch (error) {
         console.error(`Error fetching or processing blueprints for owner ${owner.toBase58()}:`, error);

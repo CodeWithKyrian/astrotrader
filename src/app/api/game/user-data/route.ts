@@ -80,8 +80,6 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
-
-        // Expect the client to send the relevant parts of UserData to save
         const body: Partial<Omit<UserData, 'civicUserId' | 'solWalletAddress' | 'lastSaved'>> = await request.json();
 
         if (!body.currentPlanetId || !body.ship) {

@@ -66,21 +66,18 @@ export const Header = () => {
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {/* Space Ship / Trading Vessel */}
                         <path
                             d="M12 3L4 10L4 20L20 20L20 10L12 3Z"
                             stroke="currentColor"
                             strokeWidth="1.5"
                             strokeLinejoin="round"
                         />
-                        {/* Cockpit */}
                         <path
                             d="M12 8L16 11V16H8V11L12 8Z"
                             stroke="currentColor"
                             strokeWidth="1.5"
                             strokeLinejoin="round"
                         />
-                        {/* Wings */}
                         <path
                             d="M4 13L1 15V18L4 17"
                             stroke="currentColor"
@@ -93,7 +90,6 @@ export const Header = () => {
                             strokeWidth="1.5"
                             strokeLinejoin="round"
                         />
-                        {/* Engines */}
                         <rect
                             x="7"
                             y="16"
@@ -112,7 +108,6 @@ export const Header = () => {
                             strokeWidth="1.5"
                             strokeLinejoin="round"
                         />
-                        {/* Cargo */}
                         <rect
                             x="10"
                             y="12"
@@ -122,7 +117,6 @@ export const Header = () => {
                             strokeWidth="1.5"
                             strokeLinejoin="round"
                         />
-                        {/* Star */}
                         <circle
                             cx="19"
                             cy="5"
@@ -137,7 +131,7 @@ export const Header = () => {
                     </h1>
                 </div>
 
-                {/* HUD Elements - only show when signed in */}
+                {/* HUD Elements  */}
                 <div className="flex items-center space-x-4 md:space-x-6 text-sm">
                     {/* Galactic Credits */}
                     <div className="flex items-center px-3 py-1.5 bg-slate-900/90 border border-yellow-600/40 rounded-md shadow-[0_0_10px_rgba(202,138,4,0.15)] backdrop-blur-md" title="Galactic Credits">
@@ -167,7 +161,7 @@ export const Header = () => {
                     </div>
                 </div>
 
-                {/* Custom User Button */}
+                {/* User Button */}
                 <div className="relative">
                     <button
                         ref={buttonRef}

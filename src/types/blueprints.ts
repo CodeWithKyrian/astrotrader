@@ -1,7 +1,6 @@
 export enum BlueprintEffectType {
     INCREASE_CARGO_CAPACITY = "INCREASE_CARGO_CAPACITY",
     INCREASE_MAX_FUEL = "INCREASE_MAX_FUEL",
-    // Add more types as needed in the future
     // INCREASE_SHIP_SPEED = "INCREASE_SHIP_SPEED",
     // ENABLE_MODULE_SLOT = "ENABLE_MODULE_SLOT",
 }

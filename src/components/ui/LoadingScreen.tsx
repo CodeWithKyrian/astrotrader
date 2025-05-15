@@ -28,21 +28,18 @@ export function LoadingScreen() {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                 >
-                    {/* Space Ship / Trading Vessel */}
                     <path
                         d="M12 3L4 10L4 20L20 20L20 10L12 3Z"
                         stroke="currentColor"
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                     />
-                    {/* Cockpit */}
                     <path
                         d="M12 8L16 11V16H8V11L12 8Z"
                         stroke="currentColor"
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                     />
-                    {/* Wings */}
                     <path
                         d="M4 13L1 15V18L4 17"
                         stroke="currentColor"
@@ -55,7 +52,6 @@ export function LoadingScreen() {
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                     />
-                    {/* Engines with animated glow */}
                     <g className="animate-thrust">
                         <rect
                             x="7"
@@ -90,7 +86,6 @@ export function LoadingScreen() {
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                     />
-                    {/* Cargo */}
                     <rect
                         x="10"
                         y="12"
@@ -100,7 +95,6 @@ export function LoadingScreen() {
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                     />
-                    {/* Star */}
                     <circle
                         cx="19"
                         cy="5"

@@ -1,24 +1,21 @@
 'use client';
 
-import { useCivicWallet } from '@/hooks/useCivicWallet';
-import { useGameStore } from '@/store/gameStore';
-import { useGalacticCredits } from '@/hooks/useGalacticCredits';
-import { MarketView } from '@/components/game/MarketView';
+import { toast } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
-import { Modal } from '@/components/ui/Modal';
 import { useShallow } from 'zustand/shallow';
+import { TabPanel, Tab, TabList, Tabs } from 'react-tabs';
+import { useGameStore } from '@/store/gameStore';
+import { useCivicWallet } from '@/hooks/useCivicWallet';
+import { useGalacticCredits } from '@/hooks/useGalacticCredits';
+import { Modal } from '@/components/ui/Modal';
+import { MarketView } from '@/components/game/MarketView';
 import { ShipyardView } from '@/components/game/ShipyardView';
 import { StarmapView } from '@/components/game/StarmapView';
 import { RefuelView } from '@/components/game/RefuelView';
-import { TabPanel } from 'react-tabs';
-import { Tab } from 'react-tabs';
-import { TabList } from 'react-tabs';
-import { Tabs } from 'react-tabs';
-import { toast } from 'react-hot-toast';
+import { StoreModal } from '@/components/game/StoreModal';
+import { StartScreen } from '@/components/game/StartScreen';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { StoreButton } from '@/components/ui/StoreButton';
-import { StoreModal } from '@/components/ui/StoreModal';
-import { StartScreen } from '@/components/ui/StartScreen';
 
 import 'react-tabs/style/react-tabs.css';
 
@@ -79,7 +76,6 @@ export default function AstroTraderPage() {
         if (isLoggedIn && hasWallet && publicKey && isUserDataLoaded && userData) {
             const loadUserBlueprints = async () => {
                 try {
-                    // This will load blueprints into game store and apply effects to ship stats
                     await loadOwnedBlueprints(publicKey);
                 } catch (error) {
                     console.error("Failed to load user blueprints:", error);
@@ -120,8 +116,8 @@ export default function AstroTraderPage() {
                 }
 
                 await refreshCredits();
-                // Update the local user data after successful claim
-                if (userData) {
+
+                if (userData) { // Update local state
                     userData.hasClaimedInitialCredits = true;
                 }
                 setShowClaimModal(false);
@@ -136,12 +132,7 @@ export default function AstroTraderPage() {
         }
     };
 
-    // Modify loading conditions to show UI earlier
-    // Only show loading screen for wallet loading and login state
-    // Let components handle their own loading states
-    const isInitialLoading = isWalletLoading;
-
-    if (isInitialLoading) {
+    if (isWalletLoading) {
         return <LoadingScreen />;
     }
 
@@ -236,7 +227,7 @@ export default function AstroTraderPage() {
                     </div>
                 </div>
 
-                {/* Right Column - Tabbed Interface */}
+                {/* Right Column */}
                 <div className="lg:col-span-2 panel blueprint-grid-bg relative shadow-[0_0_35px_-5px_rgba(6,182,212,0.35)] border-cyan-600/40 overflow-hidden">
                     {/* Subtle star field in background */}
                     <div className="absolute inset-0 stars-sm opacity-20 pointer-events-none"></div>
@@ -382,7 +373,6 @@ export default function AstroTraderPage() {
                 </div>
             </Modal>
 
-            {/* Store Button and Modal */}
             <StoreButton />
             <StoreModal />
         </div>

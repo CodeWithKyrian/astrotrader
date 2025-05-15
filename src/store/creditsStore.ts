@@ -8,7 +8,6 @@ interface CreditsState {
     error: string | null;
     isInitialized: boolean;
 
-    // Actions
     refreshBalance: (publicKey: PublicKey | undefined) => Promise<void>;
     setBalance: (balance: number) => void;
 }
@@ -22,7 +21,6 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
     refreshBalance: async (publicKey: PublicKey | undefined) => {
         const { isLoading } = get();
 
-        // Return early if already loading to prevent duplicate requests
         if (isLoading) return;
 
         if (!publicKey) {

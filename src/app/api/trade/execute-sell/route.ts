@@ -83,6 +83,7 @@ export async function POST(request: Request) {
         if (error instanceof Error && 'logs' in error) {
             console.error("Solana Logs:", error.logs);
         }
+
         return NextResponse.json({ error: 'Failed to execute sell trade', details: errorDetails }, { status: 500 });
     }
 }

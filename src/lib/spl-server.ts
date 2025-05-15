@@ -16,7 +16,6 @@ import { getPublicEnv } from '@/config/environment';
 const env = getPublicEnv();
 export const GALACTIC_CREDITS_MINT = new PublicKey(env.GALACTIC_CREDITS_MINT_ADDRESS);
 
-
 export async function getSplBalance(
     ownerPublicKey: PublicKey,
     mintPublicKey: PublicKey = GALACTIC_CREDITS_MINT
