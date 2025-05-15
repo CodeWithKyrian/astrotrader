@@ -11,6 +11,7 @@ export enum BlueprintEffectType {
  * Parsed game-specific attributes from the NFT's metadata.
  */
 export interface ParsedBlueprintAttributes {
+    blueprintId: string;      // Database ID that links to our blueprint definitions
     effectType: BlueprintEffectType;
     effectValue: number;
     tier: number;

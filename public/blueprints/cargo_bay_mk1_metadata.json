@@ -1,17 +1,17 @@
 {
-    "name": "Expanded Cargo Bay Mk1 (P)",
+    "name": "Expanded Cargo Bay Mk1",
     "symbol": "ASTROBP",
     "description": "A common blueprint for a basic cargo expansion module. Grants +25 cargo capacity.",
-    "image": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    "image": "https://pub-25af7b5c87dd456ab790b6e8d7cc5c2f.r2.dev/cargo_mk11.jpeg",
     "attributes": [
-        { "trait_type": "Blueprint ID", "value": "cargo-expand-mk1" },
+        { "trait_type": "Blueprint ID", "value": "bp_cargo_mk1" },
         { "trait_type": "Effect Type", "value": "INCREASE_CARGO_CAPACITY" },
         { "trait_type": "Effect Value", "value": 25 },
         { "trait_type": "Tier", "value": 1 },
         { "trait_type": "Description", "value": "Increases ship cargo capacity by 25 units." }
     ],
     "properties": {
-        "files": [{ "uri": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png", "type": "image/png" }],
+        "files": [{ "uri": "https://pub-25af7b5c87dd456ab790b6e8d7cc5c2f.r2.dev/cargo_mk11.jpeg", "type": "image/jpeg" }],
         "category": "image"
     }
-}
+} 

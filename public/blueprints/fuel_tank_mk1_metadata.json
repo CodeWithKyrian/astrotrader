@@ -1,0 +1,17 @@
+{
+    "name": "Auxiliary Fuel Tank Mk1",
+    "symbol": "ASTROBP",
+    "description": "A common blueprint for a fuel system upgrade. Grants +50 maximum fuel capacity.",
+    "image": "https://pub-25af7b5c87dd456ab790b6e8d7cc5c2f.r2.dev/fuel_mk1.jpeg",
+    "attributes": [
+        { "trait_type": "Blueprint ID", "value": "bp_fuel_mk1" },
+        { "trait_type": "Effect Type", "value": "INCREASE_MAX_FUEL" },
+        { "trait_type": "Effect Value", "value": 50 },
+        { "trait_type": "Tier", "value": 1 },
+        { "trait_type": "Description", "value": "Increases ship fuel capacity by 50 units." }
+    ],
+    "properties": {
+        "files": [{ "uri": "https://pub-25af7b5c87dd456ab790b6e8d7cc5c2f.r2.dev/fuel_mk1.jpeg", "type": "image/jpeg" }],
+        "category": "image"
+    }
+} 

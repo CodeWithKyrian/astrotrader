@@ -1,0 +1,38 @@
+[
+    {
+        "id": "terra-prime",
+        "name": "Terra Prime",
+        "description": "The bustling capital of the sector.",
+        "coordinates": { "x": 100, "y": 100 },
+        "fuelPrice": 5,
+        "marketListings": [
+            { "commodityId": "water", "buyPrice": 10, "sellPrice": 8 },
+            { "commodityId": "food", "buyPrice": 20, "sellPrice": 18 },
+            { "commodityId": "ore", "sellPrice": 50 }
+        ]
+    },
+    {
+        "id": "mars-colony",
+        "name": "Mars Colony",
+        "description": "A rugged, industrial outpost.",
+        "coordinates": { "x": 250, "y": 150 },
+        "fuelPrice": 8,
+        "marketListings": [
+            { "commodityId": "water", "sellPrice": 15 },
+            { "commodityId": "food", "sellPrice": 25 },
+            { "commodityId": "ore", "buyPrice": 40 },
+            { "commodityId": "tech", "buyPrice": 200, "sellPrice": 180 }
+        ]
+    },
+    {
+        "id": "europa-outpost",
+        "name": "Europa Outpost",
+        "description": "A remote scientific station beneath the ice.",
+        "coordinates": { "x": 150, "y": 300 },
+        "fuelPrice": 3,
+        "marketListings": [
+            { "commodityId": "water", "buyPrice": 5, "sellPrice": 3 },
+            { "commodityId": "tech", "sellPrice": 220 }
+        ]
+    }
+]

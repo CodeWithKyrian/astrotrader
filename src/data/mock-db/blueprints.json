@@ -1,0 +1,24 @@
+[
+    {
+        "id": "bp_cargo_mk1",
+        "name": "Expanded Cargo Bay Mk1",
+        "description": "Increases ship cargo capacity.",
+        "tier": 1,
+        "imageUrl": "/images/blueprints/cargo_mk1.png",
+        "metadataUri": "/blueprints/cargo_bay_mk1_metadata.json",
+        "effects": [
+            { "type": "INCREASE_CARGO_CAPACITY", "value": 25 }
+        ]
+    },
+    {
+        "id": "bp_fuel_mk1",
+        "name": "Auxiliary Fuel Tank Mk1",
+        "description": "Increases ship maximum fuel.",
+        "tier": 1,
+        "imageUrl": "/images/blueprints/fuel_mk1.png",
+        "metadataUri": "/blueprints/fuel_tank_mk1_metadata.json",
+        "effects": [
+            { "type": "INCREASE_MAX_FUEL", "value": 50 }
+        ]
+    }
+]

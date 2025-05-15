@@ -1,36 +1,38 @@
 import { Metaplex, keypairIdentity, MetaplexFile } from "@metaplex-foundation/js";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { connection, minterKeypair as defaultMinterKeypair } from "./solana-server";
-import { getPublicEnv } from "@/config/environment";
-
+import { BlueprintDefinition } from "@/types/models";
 const metaplex = Metaplex.make(connection)
     .use(keypairIdentity(defaultMinterKeypair));
 
-const publicEnv = getPublicEnv();
 
 interface MintBlueprintNftParams {
     recipientPublicKey: PublicKey;
-    name: string;
     symbol: string;
+    blueprintDefinition: BlueprintDefinition;
     minterKeypair?: Keypair;
 }
 
 /**
- * Mints a new NFT (Blueprint) pointing to a predefined metadata URI.
- * The server's `minterKeypair` pays all fees and is the update authority.
+ * Mints a new Blueprint NFT based on the specified blueprintId.
+ * Uses blueprint-specific metadata from the API.
  */
-export async function mintPlaceholderBlueprintNft({
+export async function mintBlueprintNft({
     recipientPublicKey,
-    name,
     symbol,
+    blueprintDefinition,
     minterKeypair = defaultMinterKeypair,
 }: MintBlueprintNftParams): Promise<{ mintAddress: PublicKey; signature: string }> {
-    console.log(`Minting Placeholder Blueprint NFT "${name}" to ${recipientPublicKey.toBase58()}`);
-    console.log(`Using Metadata URI: ${publicEnv.PLACEHOLDER_BLUEPRINT_METADATA_URI}`);
+    
+    const name = blueprintDefinition.name;
+    const metadataUri = blueprintDefinition.metadataUri;
+
+    console.log(`Minting Blueprint NFT "${name}" (ID: ${blueprintDefinition.id}) to ${recipientPublicKey.toBase58()}`);
+    console.log(`Using Metadata URI: ${metadataUri}`);
 
     try {
         const { response, nft } = await metaplex.nfts().create({
-            uri: publicEnv.PLACEHOLDER_BLUEPRINT_METADATA_URI,
+            uri: metadataUri,
             name: name,
             symbol: symbol,
             sellerFeeBasisPoints: 0,
@@ -40,17 +42,13 @@ export async function mintPlaceholderBlueprintNft({
             tokenOwner: recipientPublicKey,
         });
 
-        console.log(`NFT minted successfully: Mint Address - ${nft.address.toBase58()}`);
+        console.log(`Blueprint NFT minted successfully: Mint Address - ${nft.address.toBase58()}`);
         console.log(`Transaction signature: ${response.signature}`);
 
         return { mintAddress: nft.address, signature: response.signature };
 
     } catch (error) {
-        console.error("Error during Metaplex NFT creation:", error);
-        if (error instanceof Error && error.message.includes("Bundlr")) {
-             console.error("This might be a Bundlr funding issue if Arweave upload was attempted by Metaplex implicitly.");
-             console.error("Ensure your metadata URI is correctly pointing to an already hosted JSON (like on JSONKeeper).");
-        }
+        console.error(`Error during Blueprint NFT creation (ID: ${blueprintDefinition.id}):`, error);
         throw error;
     }
 }

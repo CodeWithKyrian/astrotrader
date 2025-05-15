@@ -1,42 +1,42 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useCivicWallet } from './useCivicWallet';
-import { fetchAndProcessOwnedBlueprints } from '@/lib/metaplex-client';
+import { useGameStore } from '@/store/gameStore';
+import { useShallow } from 'zustand/shallow';
 import type { ProcessedBlueprint } from '@/types/blueprints';
 
+/**
+ * @deprecated This hook is deprecated. Use the blueprint state from gameStore directly.
+ * The blueprint loading logic has been moved to the game store for better architecture.
+ * This hook now just forwards to the game store for backwards compatibility.
+ */
 export function useOwnedBlueprints() {
     const { publicKey, hasWallet } = useCivicWallet();
-    const [blueprints, setBlueprints] = useState<ProcessedBlueprint[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    const { 
+        ownedBlueprints, 
+        isBlueprintsLoading, 
+        blueprintsError, 
+        loadOwnedBlueprints 
+    } = useGameStore(
+        useShallow(state => ({
+            ownedBlueprints: state.ownedBlueprints,
+            isBlueprintsLoading: state.isBlueprintsLoading,
+            blueprintsError: state.blueprintsError,
+            loadOwnedBlueprints: state.loadOwnedBlueprints
+        }))
+    );
 
-    const fetchBlueprints = useCallback(async () => {
+    const refreshBlueprints = useCallback(() => {
         if (publicKey && hasWallet) {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const fetched = await fetchAndProcessOwnedBlueprints(publicKey);
-                setBlueprints(fetched);
-            } catch (err: any) {
-                console.error("Error in fetchBlueprints hook:", err);
-                setError(err.message || "Failed to fetch blueprints");
-            } finally {
-                setIsLoading(false);
-            }
-        } else {
-            setBlueprints([]); // Clear if no wallet/publicKey
+            loadOwnedBlueprints(publicKey);
         }
-    }, [publicKey, hasWallet]);
-
-    useEffect(() => {
-        fetchBlueprints();
-    }, [fetchBlueprints]); // Re-fetch if publicKey or hasWallet changes
+    }, [publicKey, hasWallet, loadOwnedBlueprints]);
 
     return {
-        blueprints,
-        isLoading,
-        error,
-        refreshBlueprints: fetchBlueprints,
+        blueprints: ownedBlueprints,
+        isLoading: isBlueprintsLoading,
+        error: blueprintsError,
+        refreshBlueprints,
     };
 }

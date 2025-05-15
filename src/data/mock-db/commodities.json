@@ -1,0 +1,6 @@
+[
+    { "id": "water", "name": "Purified Water", "description": "Essential for survival.", "baseValue": 5 },
+    { "id": "food", "name": "Nutri-Paste", "description": "Nutrient-rich sustenance.", "baseValue": 10 },
+    { "id": "ore", "name": "Raw Minerals", "description": "Unprocessed metallic ores.", "baseValue": 25 },
+    { "id": "tech", "name": "Tech Components", "description": "Advanced electronic parts.", "baseValue": 100 }
+]

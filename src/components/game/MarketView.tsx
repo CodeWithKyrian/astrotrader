@@ -1,26 +1,68 @@
 'use client';
 
-import { useGameStore, COMMODITIES_DATA } from '@/store/gameStore';
-import { useGalacticCredits } from '@/hooks/useGalacticCredits';
+import { useGameStore } from '@/store/gameStore';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
 import { useState, useMemo } from 'react';
-import { GALACTIC_CREDITS_MINT } from '@/lib/spl-client';
+import { createTreasuryTransferTransaction } from '@/lib/spl-client';
 import { getPublicEnv } from '@/config/environment';
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
 import { connection } from '@/lib/solana-client';
+import { useShallow } from 'zustand/react/shallow';
+import { toast } from 'react-hot-toast';
 
 const env = getPublicEnv();
 const TREASURY_PUBLIC_KEY = new PublicKey(env.TREASURY_PUBLIC_KEY);
 
-export function MarketView({ galacticCredits, refreshGalacticCredits }: { galacticCredits: number, refreshGalacticCredits: () => void }) {
-    const { currentPlanetId, planets, ship, canBuyCommodity, updateCargoOnBuy, canSellCommodity, updateCargoOnSell, setIsTrading, isTrading } = useGameStore();
+interface MarketViewProps {
+    galacticCredits: number;
+    refreshGalacticCredits: () => Promise<void>;
+}
+
+interface TradingState {
+    isTrading: boolean;
+    commodityId: string | null;
+    action: 'buy' | 'sell' | null;
+}
+
+export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketViewProps) {
+    const {
+        userData,
+        planets,
+        commodities,
+        isGameDataLoaded,
+        canBuyCommodity,
+        updateCargoOnBuy,
+        canSellCommodity,
+        updateCargoOnSell,
+        setIsTrading,
+        isTrading
+    } = useGameStore(
+        useShallow(state => ({
+            userData: state.userData,
+            planets: state.planets,
+            commodities: state.commodities,
+            isGameDataLoaded: state.isGameDataLoaded,
+            canBuyCommodity: state.canBuyCommodity,
+            updateCargoOnBuy: state.updateCargoOnBuy,
+            canSellCommodity: state.canSellCommodity,
+            updateCargoOnSell: state.updateCargoOnSell,
+            setIsTrading: state.setIsTrading,
+            isTrading: state.isTrading,
+        }))
+    );
+
     const { publicKey: userPublicKey, sendTransaction } = useCivicWallet();
-
     const [quantities, setQuantities] = useState<Record<string, number>>({});
-    const [error, setError] = useState<string | null>(null);
+    const [tradingState, setTradingState] = useState<TradingState>({
+        isTrading: false,
+        commodityId: null,
+        action: null
+    });
 
-    const currentPlanet = useMemo(() => planets.find(p => p.id === currentPlanetId), [currentPlanetId, planets]);
+    const currentPlanet = useMemo(() => {
+        if (!userData?.currentPlanetId || planets.length === 0) return null;
+        return planets.find(p => p.id === userData.currentPlanetId);
+    }, [userData?.currentPlanetId, planets]);
 
     const handleQuantityChange = (commodityId: string, value: string) => {
         const numValue = parseInt(value, 10);
@@ -33,63 +75,72 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: { galact
         price: number,
         maxAvailable?: number
     ) => {
-        if (!currentPlanet || !userPublicKey || !sendTransaction) {
-            setError("Wallet not connected or planet data missing.");
+        if (!currentPlanet || !userPublicKey || !sendTransaction || !userData || !userData.ship) {
+            toast.error("Wallet not connected, user data missing, or planet data missing.");
             return;
         }
+
+        setTradingState({
+            isTrading: true,
+            commodityId,
+            action: tradeType
+        });
         setIsTrading(true);
-        setError(null);
 
         const quantity = quantities[commodityId] || 0;
         if (quantity <= 0) {
-            setError("Please enter a valid quantity.");
+            toast.error("Please enter a valid quantity.");
+            setTradingState({
+                isTrading: false,
+                commodityId: null,
+                action: null
+            });
             setIsTrading(false);
             return;
         }
 
-        let transaction: Transaction | null = null;
-        const transactionLamports = BigInt(Math.round(quantity * price * Math.pow(10, 6)));
-
         try {
             if (tradeType === 'buy') {
-                const userGalacticCreditsAta = await getAssociatedTokenAddress(GALACTIC_CREDITS_MINT, userPublicKey, true);
-                const treasuryGalacticCreditsAta = await getAssociatedTokenAddress(GALACTIC_CREDITS_MINT, TREASURY_PUBLIC_KEY, true);
-
-                if (!canBuyCommodity(currentPlanet.id, commodityId, quantity, price)) {
-                    setError("Cannot buy: Not enough cargo space.");
-                    setIsTrading(false);
-                    return;
-                }
-                if (galacticCredits < quantity * price) {
-                    setError("Not enough Galactic Credits to buy.");
+                const check = canBuyCommodity(commodityId, quantity, price, galacticCredits);
+                if (!check.canAfford || !check.hasSpace) {
+                    toast.error(check.reason || "Cannot complete purchase.");
+                    setTradingState({
+                        isTrading: false,
+                        commodityId: null,
+                        action: null
+                    });
                     setIsTrading(false);
                     return;
                 }
 
-                transaction = new Transaction().add(
-                    createTransferInstruction(
-                        userGalacticCreditsAta,
-                        treasuryGalacticCreditsAta,
-                        userPublicKey,
-                        transactionLamports
-                    )
-                );
+                const tokenAmount = quantity * price * Math.pow(10, 6);
+                const transaction = await createTreasuryTransferTransaction(userPublicKey, tokenAmount);
 
                 if (!transaction) {
-                    setError("Failed to prepare transaction.");
+                    toast.error("Failed to create transaction");
+                    setTradingState({
+                        isTrading: false,
+                        commodityId: null,
+                        action: null
+                    });
                     setIsTrading(false);
                     return;
                 }
 
                 const signature = await sendTransaction(transaction, connection);
-                console.log('Trade transaction sent:', signature);
+                console.log('Buy transaction sent:', signature);
+                toast.success(`Purchased ${quantity} units of ${commodities.find(c => c.id === commodityId)?.name}! Signature: ${signature.substring(0, 10)}...`);
 
                 updateCargoOnBuy(commodityId, quantity);
                 await refreshGalacticCredits();
-                setQuantities(prev => ({ ...prev, [commodityId]: 0 }));
             } else { // Sell
-                if (!canSellCommodity(currentPlanet.id, commodityId, quantity)) {
-                    setError("Cannot sell: Not enough items in cargo or invalid quantity.");
+                if (!canSellCommodity(commodityId, quantity)) {
+                    toast.error("Cannot sell: Not enough items in cargo.");
+                    setTradingState({
+                        isTrading: false,
+                        commodityId: null,
+                        action: null
+                    });
                     setIsTrading(false);
                     return;
                 }
@@ -112,75 +163,198 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: { galact
                     throw new Error(data.details || data.error || "Sell transaction failed on server.");
                 }
 
+                toast.success(data.message || `Successfully sold! ${data.creditsAwarded} GC added.`);
+
                 updateCargoOnSell(commodityId, quantity);
 
                 await refreshGalacticCredits();
-                setQuantities(prev => ({ ...prev, [commodityId]: 0 }));
-                // fluctuatePrices(currentPlanet.id);
-                // alert(data.message || `Successfully sold items! ${data.creditsAwarded} GC added.`);
             }
+
+            setQuantities(prev => ({ ...prev, [commodityId]: 0 }));
         } catch (e: any) {
             console.error("Trade failed:", e);
-            setError(e.message || "An unknown error occurred during trade.");
+            toast.error(e.message || "An unknown error occurred during trade.");
         } finally {
+            setTradingState({
+                isTrading: false,
+                commodityId: null,
+                action: null
+            });
             setIsTrading(false);
         }
     };
 
-    if (!currentPlanet) return <p className="text-gray-500">Select a planet to see market data.</p>;
+    if (!isGameDataLoaded || !userData) return (
+        <div className="h-full flex items-center justify-center">
+            <div className="text-cyan-400 animate-pulse flex items-center">
+                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading Market Data...
+            </div>
+        </div>
+    );
 
-    const commodity = COMMODITIES_DATA.find(c => c.id === (Object.keys(quantities)[0] ?? '')); // A bit hacky for alert, improve if needed
+    if (!currentPlanet) return (
+        <div className="h-full flex items-center justify-center">
+            <div className="text-cyan-400 animate-pulse flex items-center">
+                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Traveling to planet market...
+            </div>
+        </div>
+    );
 
     return (
-        <div className="space-y-3">
-            {error && <p className="text-red-500 bg-red-900/30 p-2 rounded text-sm">{error}</p>}
-            {COMMODITIES_DATA.map(commodityItem => { // Renamed to avoid conflict
-                const marketInfo = currentPlanet.commodities.find(c => c.commodityId === commodityItem.id);
-                const itemInCargo = ship.currentCargo.find(c => c.commodityId === commodityItem.id);
-                const cargoQty = itemInCargo ? itemInCargo.quantity : 0;
+        <div className="h-full flex flex-col bg-transparent">
+            {/* Market Header */}
+            <div className="flex-shrink-0 mb-4">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h3 className="text-lg font-semibold text-cyan-300" style={{ textShadow: '0 0 10px rgba(6,182,212,0.3)' }}>
+                            <span className="opacity-70 mr-2">Market:</span> {currentPlanet.name}
+                        </h3>
+                        <p className="text-sm text-gray-400 mt-1">Available commodities for trade on this planet.</p>
+                    </div>
 
-                return (
-                    <div key={commodityItem.id} className="p-3 border border-gray-700 rounded-md bg-gray-800 flex items-center justify-between space-x-2">
-                        <div className="flex-1">
-                            <p className="font-semibold">{commodityItem.name} <span className="text-xs text-gray-400">(In Cargo: {cargoQty})</span></p>
-                            <div className="text-xs space-x-3">
-                                {marketInfo?.buyPrice && <span className="text-red-400">Buy: {marketInfo.buyPrice} GC</span>}
-                                {marketInfo?.sellPrice && <span className="text-green-400">Sell: {marketInfo.sellPrice} GC</span>}
-                                {!marketInfo?.buyPrice && !marketInfo?.sellPrice && <span className="text-gray-500">Not Traded Here</span>}
+                    <div className="flex items-center space-x-3">
+                        {/* Market Legend */}
+                        <div className="flex items-center space-x-3 text-xs">
+                            <div className="flex items-center">
+                                <span className="w-2 h-2 bg-red-400 rounded-full mr-1"></span>
+                                <span className="text-gray-400">Buy</span>
+                            </div>
+                            <div className="flex items-center">
+                                <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                <span className="text-gray-400">Sell</span>
                             </div>
                         </div>
-                        <input
-                            type="number"
-                            min="0"
-                            value={quantities[commodityItem.id] || ''}
-                            onChange={(e) => handleQuantityChange(commodityItem.id, e.target.value)}
-                            className="w-16 p-1.5 bg-gray-900 border border-gray-600 rounded-md text-center text-sm"
-                            placeholder="Qty"
-                            disabled={isTrading}
-                        />
-                        <div className="flex flex-col space-y-1 sm:flex-row sm:space-y-0 sm:space-x-1">
-                            {marketInfo?.buyPrice && (
-                                <button
-                                    onClick={() => handleTrade(commodityItem.id, 'buy', marketInfo.buyPrice!)}
-                                    className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-xs rounded-md disabled:opacity-50"
-                                    disabled={isTrading || (quantities[commodityItem.id] || 0) === 0}
-                                >
-                                    Buy
-                                </button>
-                            )}
-                            {marketInfo?.sellPrice && (
-                                <button
-                                    onClick={() => handleTrade(commodityItem.id, 'sell', marketInfo.sellPrice!, cargoQty)}
-                                    className="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-xs rounded-md disabled:opacity-50"
-                                    disabled={isTrading || (quantities[commodityItem.id] || 0) === 0 || cargoQty < (quantities[commodityItem.id] || 0)}
-                                >
-                                    Sell
-                                </button>
-                            )}
+
+                        {/* Market Status Indicator */}
+                        <div className="bg-slate-800/80 px-3 py-1.5 rounded-md border border-cyan-700/40 flex items-center shadow-[0_0_10px_rgba(8,145,178,0.15)]">
+                            <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                            <span className="text-xs text-cyan-100">Trading Active</span>
                         </div>
                     </div>
-                );
-            })}
+                </div>
+            </div>
+
+            {/* Scrollable Commodity List - Direct Children */}
+            <div className="flex-grow overflow-y-auto custom-scrollbar">
+                <div className="space-y-3">
+                    {commodities.map(commodityItem => {
+                        const marketInfo = currentPlanet.marketListings.find(c => c.commodityId === commodityItem.id);
+                        const itemInCargo = userData.ship.currentCargo.find(c => c.commodityId === commodityItem.id);
+                        const cargoQty = itemInCargo ? itemInCargo.quantity : 0;
+                        const isTradable = marketInfo?.buyPrice || marketInfo?.sellPrice;
+
+                        return (
+                            <div key={commodityItem.id}
+                                className={`bg-slate-900/60 border rounded-md overflow-hidden shadow-[0_0_15px_rgba(8,145,178,0.1)] backdrop-blur-sm transition-all duration-200
+                                ${isTradable
+                                        ? 'border-cyan-700/50 hover:border-cyan-500/70 hover:shadow-[0_0_15px_rgba(8,145,178,0.25)]'
+                                        : 'border-gray-700/50 opacity-70'}`}>
+
+                                {/* Commodity Header */}
+                                <div className="px-4 py-3 bg-gradient-to-r from-slate-800/70 via-slate-900/70 to-slate-800/70 border-b border-cyan-800/30 flex justify-between items-center">
+                                    <h5 className="font-medium text-base text-cyan-300" style={{ textShadow: '0 0 8px rgba(6,182,212,0.3)' }}>{commodityItem.name}</h5>
+                                    <div className="bg-slate-800/80 px-2 py-0.5 rounded text-xs text-gray-300 shadow-[0_0_8px_rgba(8,145,178,0.1)] flex items-center border border-slate-700/70">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                        </svg>
+                                        In Cargo: <span className="font-medium ml-1 text-cyan-300">{cargoQty}</span>
+                                    </div>
+                                </div>
+
+                                {/* Commodity Content */}
+                                <div className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    {/* Commodity Info */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-400">{commodityItem.description || "No description available."}</p>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {marketInfo?.buyPrice && (
+                                                <div className="bg-red-900/40 border border-red-700/40 rounded-md shadow-[0_0_8px_rgba(225,29,72,0.1)] px-2 py-0.5 text-xs text-red-300 backdrop-blur-sm">
+                                                    Buy At: <span className="font-medium text-red-200">{marketInfo.buyPrice} GC</span>
+                                                </div>
+                                            )}
+                                            {marketInfo?.sellPrice && (
+                                                <div className="bg-green-900/40 border border-green-700/40 rounded-md shadow-[0_0_8px_rgba(22,163,74,0.1)] px-2 py-0.5 text-xs text-green-300 backdrop-blur-sm">
+                                                    Sell At: <span className="font-medium text-green-200">{marketInfo.sellPrice} GC</span>
+                                                </div>
+                                            )}
+                                            {!isTradable && (
+                                                <div className="bg-gray-800/30 border border-gray-700/30 rounded px-2 py-0.5 text-xs text-gray-500">
+                                                    Not Traded Here
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Trading Actions */}
+                                    {isTradable && (
+                                        <div className="flex flex-col sm:flex-row items-center gap-2 sm:ml-auto">
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={quantities[commodityItem.id] || ''}
+                                                    onChange={(e) => handleQuantityChange(commodityItem.id, e.target.value)}
+                                                    className="bg-slate-900/80 border border-cyan-900/50 rounded-md w-24 py-1.5 px-3 text-sm text-cyan-100 placeholder-gray-500 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500"
+                                                    disabled={tradingState.isTrading}
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">QTY</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {marketInfo?.buyPrice && (
+                                                    <button
+                                                        disabled={tradingState.isTrading}
+                                                        onClick={() => handleTrade(commodityItem.id, 'buy', marketInfo.buyPrice!)}
+                                                        className="flex items-center justify-center rounded-md bg-gradient-to-r from-red-900/80 to-red-700/80 hover:from-red-800 hover:to-red-600 border border-red-700/50 px-3 py-1.5 text-sm font-medium text-white shadow-[0_0_10px_rgba(225,29,72,0.15)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    >
+                                                        {tradingState.isTrading && tradingState.commodityId === commodityItem.id && tradingState.action === 'buy' ? (
+                                                            <svg className="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        ) : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                            </svg>
+                                                        )}
+                                                        Buy
+                                                    </button>
+                                                )}
+                                                {marketInfo?.sellPrice && (
+                                                    <button
+                                                        disabled={tradingState.isTrading || cargoQty <= 0}
+                                                        onClick={() => handleTrade(commodityItem.id, 'sell', marketInfo.sellPrice!, cargoQty)}
+                                                        className="flex items-center justify-center rounded-md bg-gradient-to-r from-green-900/80 to-green-700/80 hover:from-green-800 hover:to-green-600 border border-green-700/50 px-3 py-1.5 text-sm font-medium text-white shadow-[0_0_10px_rgba(22,163,74,0.15)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    >
+                                                        {tradingState.isTrading && tradingState.commodityId === commodityItem.id && tradingState.action === 'sell' ? (
+                                                            <svg className="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        ) : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        )}
+                                                        Sell
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 }

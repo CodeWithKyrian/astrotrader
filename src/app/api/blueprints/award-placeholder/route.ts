@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUser } from '@civic/auth-web3/nextjs';
 import { PublicKey } from '@solana/web3.js';
-import { mintPlaceholderBlueprintNft } from '@/lib/metaplex-server';
 import { minterKeypair as serverMinterKeypair } from '@/lib/solana-server'; 
 import { getRedisClient } from '@/lib/redis';
 import { getPublicEnv } from '@/config/environment';

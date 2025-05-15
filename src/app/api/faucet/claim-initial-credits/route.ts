@@ -4,11 +4,11 @@ import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana
 import { transferSplFromServerPool, GALACTIC_CREDITS_MINT, getSplBalance } from '@/lib/spl-server';
 import { rewardPoolKeypair, minterKeypair, connection, sendServerSignedTransaction } from '@/lib/solana-server';
 import { getRedisClient } from '@/lib/redis';
+import type { UserData } from '@/types/models';
 
 const INITIAL_CREDITS_AMOUNT_UI = 1000;
 const INITIAL_CREDITS_LAMPORTS = BigInt(INITIAL_CREDITS_AMOUNT_UI * Math.pow(10, 6));
 const INITIAL_SOL_LAMPORTS = BigInt(Math.floor(0.005 * LAMPORTS_PER_SOL)); // 0.005 SOL
-const CLAIM_FLAG_EXPIRY_SECONDS = 60 * 60 * 24 * 365; // Store flag for 1 year
 
 export async function POST(request: Request) {
     try {
@@ -28,10 +28,16 @@ export async function POST(request: Request) {
         const userPublicKey = new PublicKey(userSolWalletAddressString);
 
         const redis = getRedisClient();
-        const claimFlagKey = `user:${user.id}:initialCreditsClaimed`;
-        const alreadyClaimed = await redis.get(claimFlagKey);
+        const userDataKey = `user:${user.id}:userData`;
+        const savedDataString = await redis.get(userDataKey);
 
-        if (alreadyClaimed === 'true') {
+        if (!savedDataString) {
+            return NextResponse.json({ error: 'User data not found' }, { status: 400 });
+        }
+
+        const userData: UserData = JSON.parse(savedDataString);
+
+        if (userData.hasClaimedInitialCredits) {
             const currentBalance = await getSplBalance(userPublicKey, GALACTIC_CREDITS_MINT);
             
             return NextResponse.json({
@@ -52,7 +58,9 @@ export async function POST(request: Request) {
             `Initial ${INITIAL_CREDITS_AMOUNT_UI} AstroTrader Galactic Credits for user ${user.id}`
         );
 
-        await redis.set(claimFlagKey, 'true', 'EX', CLAIM_FLAG_EXPIRY_SECONDS);
+        userData.hasClaimedInitialCredits = true;
+        userData.lastSaved = Date.now();
+        await redis.set(userDataKey, JSON.stringify(userData));
 
         console.log(`Initial credits sent. Signature: ${signature}`);
 

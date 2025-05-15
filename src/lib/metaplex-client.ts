@@ -42,22 +42,24 @@ export async function fetchAndProcessOwnedBlueprints(owner: PublicKey): Promise<
             }
 
             if (fullAsset.json && fullAsset.json.attributes) {
-                let effectTypeAttr, effectValueAttr, tierAttr, descriptionAttr;
+                let blueprintIdAttr, effectTypeAttr, effectValueAttr, tierAttr, descriptionAttr;
 
                 for (const attr of fullAsset.json.attributes) {
+                    if (attr.trait_type === "Blueprint ID") blueprintIdAttr = String(attr.value);
                     if (attr.trait_type === "Effect Type") effectTypeAttr = attr.value as BlueprintEffectType;
                     if (attr.trait_type === "Effect Value") effectValueAttr = Number(attr.value);
                     if (attr.trait_type === "Tier") tierAttr = Number(attr.value);
                     if (attr.trait_type === "Description") descriptionAttr = String(attr.value);
                 }
 
-                if (effectTypeAttr && typeof effectValueAttr === 'number' && typeof tierAttr === 'number' && descriptionAttr) {
+                if (blueprintIdAttr && effectTypeAttr && typeof effectValueAttr === 'number' && typeof tierAttr === 'number' && descriptionAttr) {
                     processedBlueprints.push({
                         mintAddress: fullAsset.address.toBase58(),
                         name: fullAsset.name || "Unknown Blueprint",
                         imageUrl: fullAsset.json.image,
                         nftDescription: fullAsset.json.description || "No description.",
                         parsedAttributes: {
+                            blueprintId: blueprintIdAttr,
                             effectType: effectTypeAttr,
                             effectValue: effectValueAttr,
                             tier: tierAttr,
@@ -65,7 +67,7 @@ export async function fetchAndProcessOwnedBlueprints(owner: PublicKey): Promise<
                         },
                     });
                 } else {
-                    // console.warn(`NFT ${nftWithJson.address.toBase58()} named "${nftWithJson.name}" is missing required blueprint attributes or has wrong types.`);
+                    console.warn(`NFT ${fullAsset.address.toBase58()} named "${fullAsset.name}" is missing required blueprint attributes (${!blueprintIdAttr ? 'Blueprint ID, ' : ''}${!effectTypeAttr ? 'Effect Type, ' : ''}${typeof effectValueAttr !== 'number' ? 'Effect Value, ' : ''}${typeof tierAttr !== 'number' ? 'Tier, ' : ''}${!descriptionAttr ? 'Description' : ''}).`);
                 }
             } else {
                 // console.warn(`Asset ${fullAsset.address.toBase58()} ("${fullAsset.name}") has no JSON metadata or attributes after loading.`);

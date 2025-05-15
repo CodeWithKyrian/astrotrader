@@ -1,16 +1,16 @@
-// src/app/api/trade/execute-sell/route.ts
 import { NextResponse } from 'next/server';
 import { getUser } from '@civic/auth-web3/nextjs';
 import { PublicKey } from '@solana/web3.js';
 import { transferSplFromServerPool, GALACTIC_CREDITS_MINT } from '@/lib/spl-server';
-import { minterKeypair, treasuryKeypair, rewardPoolKeypair } from '@/lib/solana-server'; // Minter for fees, Treasury/RewardPool as source of funds
-import { PLANETS_DATA, COMMODITIES_DATA } from '@/store/gameStore'; // To verify price, etc.
+import { minterKeypair, treasuryKeypair } from '@/lib/solana-server';
+import { planetRepository } from '@/repositories/planet-repository'; 
+import { commodityRepository } from '@/repositories/commodity-repository';
+import { Planet, Commodity } from '@/types/models';
 
 interface ExecuteSellRequestBody {
     commodityId: string;
     quantity: number;
     planetId: string;
-    // userPublicKeyString: string; // No longer needed if getUser provides solWalletAddress
 }
 
 export async function POST(request: Request) {
@@ -37,29 +37,29 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 });
         }
 
-        // --- Game Logic Verification ---
-        const planet = PLANETS_DATA.find(p => p.id === planetId);
+        const planets = await planetRepository.getAll();
+        const planet = planets.find((p: Planet) => p.id === planetId);
         if (!planet) {
             return NextResponse.json({ error: 'Invalid planet ID' }, { status: 400 });
         }
 
-        const commodityMarketInfo = planet.commodities.find(c => c.commodityId === commodityId);
-        if (!commodityMarketInfo || !commodityMarketInfo.sellPrice) { // Planet must BUY this commodity (user SELLS to planet)
+        const commodityMarketInfo = planet.marketListings.find((c: any) => c.commodityId === commodityId);
+        if (!commodityMarketInfo || !commodityMarketInfo.sellPrice) {
             return NextResponse.json({ error: 'Commodity not bought at this planet or no sell price' }, { status: 400 });
         }
 
-        const commodityDetails = COMMODITIES_DATA.find(c => c.id === commodityId);
+        const commodities = await commodityRepository.getAll();
+        const commodityDetails = commodities.find((c: Commodity) => c.id === commodityId);
         if (!commodityDetails) {
             return NextResponse.json({ error: 'Invalid commodity ID' }, { status: 400 });
         }
 
         const pricePerUnit = commodityMarketInfo.sellPrice;
-        const totalPayoutLamports = BigInt(Math.round(quantity * pricePerUnit * Math.pow(10, 6))); // 6 decimals
+        const totalPayoutLamports = BigInt(Math.round(quantity * pricePerUnit * Math.pow(10, 6)));
 
         console.log(`Processing sell: User ${userPublicKey.toBase58()} sells ${quantity} of ${commodityId} at ${planetId} for ${pricePerUnit} GC each.`);
         console.log(`Total payout: ${Number(totalPayoutLamports) / Math.pow(10,6)} GC`);
 
-        // For MVP, let's assume Treasury pays the user.
         const signature = await transferSplFromServerPool(
             minterKeypair,          // Wallet to pay transaction fees
             treasuryKeypair,        // Source of funds (Treasury's GC ATA)
