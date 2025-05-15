@@ -189,7 +189,7 @@ export const Header = () => {
                                 </svg>
                             </span>
                         )}
-                        <span className="font-medium text-sm">
+                        <span className="font-medium text-sm hidden md:block">
                             {isLoading ? (
                                 <span className="flex items-center">
                                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-cyan-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
