@@ -17,7 +17,6 @@ const publicEnvSchema = z.object({
         .min(1, { message: "NEXT_PUBLIC_GALACTIC_CREDITS_MINT_ADDRESS must be at least 1 character" }),
     TREASURY_PUBLIC_KEY: z.string({ message: "Please set the NEXT_PUBLIC_TREASURY_PUBLIC_KEY environment variable" })
         .min(1, { message: "NEXT_PUBLIC_TREASURY_PUBLIC_KEY must be at least 1 character" }),
-    PLACEHOLDER_BLUEPRINT_METADATA_URI: z.string().url({ message: "NEXT_PUBLIC_PLACEHOLDER_BLUEPRINT_METADATA_URI must be a valid URL" }),
 });
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
@@ -60,7 +59,6 @@ export function getPublicEnv(): PublicEnv {
         SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
         GALACTIC_CREDITS_MINT_ADDRESS: process.env.NEXT_PUBLIC_GALACTIC_CREDITS_MINT_ADDRESS,
         TREASURY_PUBLIC_KEY: process.env.NEXT_PUBLIC_TREASURY_PUBLIC_KEY,
-        PLACEHOLDER_BLUEPRINT_METADATA_URI: process.env.NEXT_PUBLIC_PLACEHOLDER_BLUEPRINT_METADATA_URI,
     });
 
     if (!result.success) {

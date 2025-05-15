@@ -167,7 +167,7 @@ src/
 *   **`/api/game/user-data`:**
     *   **GET:** Loads the authenticated user's persistent game state (ship, cargo, location, owned blueprints) from Redis. Returns default state if none found.
     *   **POST:** Saves the authenticated user's current game state to Redis.
-*   **`/api/blueprints/award-placeholder` (POST):** Mints a predefined placeholder NFT Blueprint to the authenticated user's Solana wallet. Server pays minting fees. Uses Redis for idempotency for this specific placeholder.
+*   **`/api/blueprints/mint` (POST):** Mints a blueprint NFT to the authenticated user's wallet after payment verification. Takes blueprintId and transactionSignature, verifies user ownership, and ensures the blueprint hasn't been minted already for this user using Redis for idempotency. The server pays minting fees.
 *   **`/api/trade/execute-sell` (POST):** Processes a user's request to sell commodities. Verifies the request, then transfers Galactic Credits from a server wallet (Treasury/Reward Pool) to the user's wallet.
 
 ## Setup & Installation
@@ -191,14 +191,11 @@ CIVIC_CLIENT_ID=YOUR_CIVIC_CLIENT_ID_FROM_AUTH.CIVIC.COM # For server-side plugi
 # Solana
 NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com # Or your preferred Devnet RPC
 
-# Galactic Credits SPL Token (Create this in the upcoing steps)
+# Galactic Credits SPL Token (Create this in the upcoming steps)
 NEXT_PUBLIC_GALACTIC_CREDITS_MINT_ADDRESS=YOUR_GALACTIC_CREDITS_TOKEN_MINT_ADDRESS
 
 # Treasury Wallet Public Key (Create wallet, get public key)
 NEXT_PUBLIC_TREASURY_WALLET_PUBLIC_KEY=YOUR_TREASURY_WALLET_PUBLIC_KEY
-
-# Placeholder Blueprint NFT Metadata URI (Host your JSON, e.g., on Vercel public or VPS or ARmweave)
-NEXT_PUBLIC_PLACEHOLDER_BLUEPRINT_METADATA_URI=YOUR_HOSTED_BLUEPRINT_METADATA_JSON_URL
 
 # Server-Side Wallet Private Keys (Byte Arrays as comma-separated numbers in a string, or base58)
 # Generate these using `solana-keygen new --outfile walletname.json`
