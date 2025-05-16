@@ -134,8 +134,6 @@ src/
 │       └── blueprints.json   # Blueprint definitions
 ├── hooks/                    # Custom React hooks
 │   ├── useCivicWallet.ts     # Hook for Civic wallet integration
-│   ├── useGalacticCredits.ts # Hook for token balance and transfers
-│   └── useOwnedBlueprints.ts # Hook for fetching NFT blueprints
 ├── lib/                      # Utility libraries
 │   ├── solana-client.ts      # Client-side Solana interactions
 │   ├── solana-server.ts      # Server-side Solana operations

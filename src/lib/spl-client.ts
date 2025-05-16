@@ -34,7 +34,11 @@ export async function getSplBalance(
 export async function createTreasuryTransferTransaction(
     payerPublicKey: PublicKey,
     tokenAmount: number
-): Promise<Transaction | null> {
+): Promise<{
+    transaction: Transaction,
+    latestBlockHash: string,
+    lastValidBlockHeight: number
+} | null> {
     try {
         const sourceTokenAccount = await getAssociatedTokenAddress(
             GALACTIC_CREDITS_MINT,
@@ -64,7 +68,11 @@ export async function createTreasuryTransferTransaction(
             )
         );
 
-        return transaction;
+        return {
+            transaction: transaction,
+            latestBlockHash: blockhash,
+            lastValidBlockHeight: lastValidBlockHeight
+        };
     } catch (error) {
         console.error("Error creating treasury transfer transaction:", error);
         return null;

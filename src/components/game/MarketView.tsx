@@ -64,8 +64,8 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
     };
 
     const handleBuy = async (commodityId: string, quantity: number, price: number) => {
-        if (!sendTransaction || !userPublicKey) {
-            toast.error("Wallet not connected, user data missing, or planet data missing.");
+        if (!sendTransaction || !userPublicKey || !connection) {
+            toast.error("Wallet not connected, user data missing, planet data missing, or connection not available.");
             return false;
         }
 
@@ -76,16 +76,47 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
         }
 
         const tokenAmount = quantity * price * Math.pow(10, 6);
-        const transaction = await createTreasuryTransferTransaction(userPublicKey, tokenAmount);
 
-        if (!transaction) {
-            toast.error("Failed to create transaction");
+
+        const result = await createTreasuryTransferTransaction(userPublicKey, tokenAmount);
+        if (!result) {
+            toast.error("Failed to create transaction object.");
             return false;
         }
 
-        const signature = await sendTransaction(transaction, connection);
-        console.log('Buy transaction sent:', signature);
-        toast.success(`Purchased ${quantity} units of ${commodities.find(c => c.id === commodityId)?.name}! Signature: ${signature.substring(0, 10)}...`);
+        let signature: string | undefined;
+        try {
+            signature = await sendTransaction(result.transaction, connection);
+
+            if (!signature) {
+                toast.error("Failed to send transaction: No signature received.");
+                return false;
+            }
+
+            toast.loading('Confirming transaction...', { id: `confirm-${signature}` });
+            const confirmation = await connection.confirmTransaction({
+                signature,
+                blockhash: result.latestBlockHash,
+                lastValidBlockHeight: result.lastValidBlockHeight,
+            }, 'confirmed');
+
+            toast.dismiss(`confirm-${signature}`);
+            if (confirmation.value.err) {
+                console.error('Transaction confirmation error:', confirmation.value.err);
+                const errorString = typeof confirmation.value.err === 'object' ? JSON.stringify(confirmation.value.err) : confirmation.value.err.toString();
+                toast.error(`Transaction failed to confirm: ${errorString}`);
+                return false;
+            }
+
+            toast.success(`Purchased ${quantity} units of ${commodities.find(c => c.id === commodityId)?.name}!`);
+        } catch (error) {
+            console.error("Error during buy transaction send/confirm:", error);
+            if (signature) {
+                toast.dismiss(`confirm-${signature}`);
+            }
+            toast.error(`Buy transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+            return false;
+        }
 
         updateCargoOnBuy(commodityId, quantity);
         await refreshGalacticCredits();
@@ -98,29 +129,39 @@ export function MarketView({ galacticCredits, refreshGalacticCredits }: MarketVi
             return false;
         }
 
+        const toastId = toast.loading("Processing sale...");
         console.log(`Initiating sell for ${quantity} of ${commodityId} from planet ${currentPlanetId}`);
 
-        const response = await fetch('/api/trade/execute-sell', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                commodityId,
-                quantity,
-                planetId: currentPlanetId,
-            }),
-        });
+        try {
+            const response = await fetch('/api/trade/execute-sell', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    commodityId,
+                    quantity,
+                    planetId: currentPlanetId,
+                }),
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.details || data.error || "Sell transaction failed on server.");
+            if (!response.ok) {
+                console.error("Sell transaction failed on server:", data);
+                toast.error(data.details || data.error || "Sell transaction failed on server.", { id: toastId });
+                return false;
+            }
+
+            toast.success(data.message || `Successfully sold! ${data.creditsAwarded} GC added.`, { id: toastId });
+
+            updateCargoOnSell(commodityId, quantity);
+            await refreshGalacticCredits();
+            return true;
+
+        } catch (error) {
+            console.error("Error during sell operation:", error);
+            toast.error(error instanceof Error ? error.message : "An unexpected error occurred during sale.", { id: toastId });
+            return false;
         }
-
-        toast.success(data.message || `Successfully sold! ${data.creditsAwarded} GC added.`);
-
-        updateCargoOnSell(commodityId, quantity);
-        await refreshGalacticCredits();
-        return true;
     };
 
     const handleTrade = async (

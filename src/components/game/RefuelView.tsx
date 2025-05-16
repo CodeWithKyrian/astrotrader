@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { useGalacticCredits } from '@/hooks/useGalacticCredits';
 import { toast } from 'react-hot-toast';
 import { useShallow } from 'zustand/shallow';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
 import { createTreasuryTransferTransaction } from '@/lib/spl-client';
 import { connection } from '@/lib/solana-client';
+import { useCreditsStore } from '@/store/creditsStore';
 
 export function RefuelView() {
     const {
@@ -22,7 +22,7 @@ export function RefuelView() {
         }))
     );
 
-    const { balance: galacticCredits, refreshBalance: refreshCredits } = useGalacticCredits();
+    const { balance: galacticCredits, refreshBalance: refreshCredits } = useCreditsStore();
     const { publicKey: userPublicKey, sendTransaction } = useCivicWallet();
 
     const [fuelAmount, setFuelAmount] = useState(10);
@@ -74,28 +74,62 @@ export function RefuelView() {
             }
 
             const tokenAmount = fuelAmount * fuelPrice * Math.pow(10, 6);
-            const transaction = await createTreasuryTransferTransaction(userPublicKey, tokenAmount);
+            const transactionResult = await createTreasuryTransferTransaction(userPublicKey, tokenAmount);
 
-            if (!transaction) {
+            if (!transactionResult || !transactionResult.transaction) {
                 toast.error("Failed to create transaction");
                 setIsProcessing(false);
                 return;
             }
 
-            const signature = await sendTransaction(transaction, connection);
-            console.log('Refuel transaction sent:', signature);
+            let signature: string | undefined;
+            try {
+                signature = await sendTransaction(transactionResult.transaction, connection);
 
-            const result = refuelShip(fuelAmount, totalFuelCost, galacticCredits);
+                if (!signature) {
+                    toast.error("Failed to send transaction: No signature received.");
+                    setIsProcessing(false);
+                    return;
+                }
+                console.log('Refuel transaction sent, signature:', signature);
 
-            if (result.success) {
-                toast.success(`Successfully refueled with ${fuelAmount} units! Signature: ${signature.substring(0, 10)}...`);
-                await refreshCredits();
-                setFuelAmount(Math.min(10, maxFuel - result.newFuel));
-            } else {
-                toast.error(result.reason || "Failed to update fuel state after transaction");
+                toast.loading('Confirming transaction...', { id: `confirm-fuel-${signature}` });
+                const confirmation = await connection.confirmTransaction({
+                    signature,
+                    blockhash: transactionResult.latestBlockHash,
+                    lastValidBlockHeight: transactionResult.lastValidBlockHeight,
+                }, 'confirmed');
+
+                toast.dismiss(`confirm-fuel-${signature}`);
+                if (confirmation.value.err) {
+                    console.error('Refuel transaction confirmation error:', confirmation.value.err);
+                    const errorString = typeof confirmation.value.err === 'object' ? JSON.stringify(confirmation.value.err) : confirmation.value.err.toString();
+                    toast.error(`Refuel transaction failed to confirm: ${errorString}`);
+                    setIsProcessing(false);
+                    return;
+                }
+
+                // If transaction confirmed, then update game state
+                const result = refuelShip(fuelAmount, totalFuelCost, galacticCredits);
+
+                if (result.success) {
+                    toast.success(`Successfully refueled with ${fuelAmount} units!`);
+                    await refreshCredits(userPublicKey);
+                    setFuelAmount(Math.min(10, maxFuel - result.newFuel));
+                } else {
+                    toast.error(result.reason || "Failed to update fuel state after transaction.");
+                }
+
+            } catch (error) {
+                console.error("Error during refuel transaction send/confirm:", error);
+                if (signature) {
+                    toast.dismiss(`confirm-fuel-${signature}`);
+                }
+                toast.error(`Refuel transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`);
             }
         } catch (error) {
-            console.error("Error purchasing fuel:", error);
+            // This outer catch is for errors before sending/confirming, e.g., createTreasuryTransferTransaction failure if not caught inside
+            console.error("Error purchasing fuel (pre-send/confirm phase):", error);
             toast.error(error instanceof Error ? error.message : "An error occurred during the fuel purchase");
         } finally {
             setIsProcessing(false);

@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 import { TabPanel, Tab, TabList, Tabs } from 'react-tabs';
 import { useGameStore } from '@/store/gameStore';
+import { useCreditsStore } from '@/store/creditsStore';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
-import { useGalacticCredits } from '@/hooks/useGalacticCredits';
 import { Modal } from '@/components/ui/Modal';
 import { MarketView } from '@/components/game/MarketView';
 import { ShipyardView } from '@/components/game/ShipyardView';
@@ -31,8 +31,9 @@ export default function AstroTraderPage() {
 
     const {
         balance: galacticCredits,
-        refreshBalance: refreshCredits
-    } = useGalacticCredits();
+        refreshBalance: refreshCredits,
+        isInitialized: isCreditsInitialized
+    } = useCreditsStore();
 
     const [tabIndex, setTabIndex] = useState(0);
     const [isClaiming, setIsClaiming] = useState(false);
@@ -86,6 +87,13 @@ export default function AstroTraderPage() {
         }
     }, [isLoggedIn, hasWallet, publicKey, isUserDataLoaded, userData, loadOwnedBlueprints]);
 
+    // 4. Load credits
+    useEffect(() => {
+        if (publicKey && hasWallet && !isCreditsInitialized) {
+            refreshCredits(publicKey);
+        }
+    }, [publicKey, hasWallet, refreshCredits, isCreditsInitialized]);
+
     // 4. Check if user needs to claim initial credits when user data is loaded
     useEffect(() => {
         if (isUserDataLoaded && userData) {
@@ -115,7 +123,7 @@ export default function AstroTraderPage() {
                     toast.success(`Successfully claimed ${data.amount} Galactic Credits!`);
                 }
 
-                await refreshCredits();
+                await refreshCredits(publicKey);
 
                 if (userData) { // Update local state
                     userData.hasClaimedInitialCredits = true;
@@ -292,7 +300,7 @@ export default function AstroTraderPage() {
                             {/* Subtle cosmic glow */}
                             <div className="absolute top-20 right-1/4 w-40 h-40 rounded-full bg-cyan-500/5 filter blur-3xl pointer-events-none"></div>
                             <div className="relative z-10">
-                                <MarketView galacticCredits={galacticCredits} refreshGalacticCredits={refreshCredits} />
+                                <MarketView galacticCredits={galacticCredits} refreshGalacticCredits={() => refreshCredits(publicKey)} />
                             </div>
                         </TabPanel>
                         <TabPanel className="react-tabs__tab-panel p-1 sm:p-4 overflow-y-auto flex-grow focus:outline-none bg-transparent relative">

@@ -4,7 +4,7 @@
         "name": "Terra Prime",
         "description": "The bustling capital of the sector.",
         "coordinates": { "x": 100, "y": 100 },
-        "fuelPrice": 5,
+        "fuelPrice": 200,
         "marketListings": [
             { "commodityId": "water", "buyPrice": 10, "sellPrice": 8 },
             { "commodityId": "food", "buyPrice": 20, "sellPrice": 18 },

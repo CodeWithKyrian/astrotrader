@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { useGalacticCredits } from '@/hooks/useGalacticCredits';
 import { BlueprintDefinition } from '@/types/models';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -11,6 +10,7 @@ import { useShallow } from 'zustand/shallow';
 import { useCivicWallet } from '@/hooks/useCivicWallet';
 import { createTreasuryTransferTransaction } from '@/lib/spl-client';
 import { connection } from '@/lib/solana-client';
+import { useCreditsStore } from '@/store/creditsStore';
 
 export function StoreModal() {
     const {
@@ -31,7 +31,7 @@ export function StoreModal() {
         }))
     );
 
-    const { balance: galacticCredits } = useGalacticCredits();
+    const { balance: galacticCredits } = useCreditsStore();
     const { publicKey, sendTransaction } = useCivicWallet();
 
     const [isProcessing, setIsProcessing] = useState(false);
@@ -72,18 +72,34 @@ export function StoreModal() {
 
             const tokenAmount = blueprintPrice * Math.pow(10, 6);
 
-            const transaction = await createTreasuryTransferTransaction(publicKey, tokenAmount);
+            const transactionResult = await createTreasuryTransferTransaction(publicKey, tokenAmount);
 
-            if (!transaction) {
+            if (!transactionResult || !transactionResult.transaction) {
                 toast.error("Failed to create transaction", { id: toastId });
                 setIsProcessing(false);
                 return;
             }
 
-            const txSignature = await sendTransaction(transaction, connection);
+            const txSignature = await sendTransaction(transactionResult.transaction, connection);
 
             if (!txSignature) {
                 toast.error("Transaction failed or rejected", { id: toastId });
+                setIsProcessing(false);
+                return;
+            }
+
+            toast.loading('Confirming payment...', { id: toastId });
+
+            const confirmation = await connection.confirmTransaction({
+                signature: txSignature,
+                blockhash: transactionResult.latestBlockHash,
+                lastValidBlockHeight: transactionResult.lastValidBlockHeight,
+            }, 'confirmed');
+
+            if (confirmation.value.err) {
+                console.error('Blueprint purchase transaction confirmation error:', confirmation.value.err);
+                const errorString = typeof confirmation.value.err === 'object' ? JSON.stringify(confirmation.value.err) : confirmation.value.err.toString();
+                toast.error(`Payment confirmation failed: ${errorString}`, { id: toastId });
                 setIsProcessing(false);
                 return;
             }

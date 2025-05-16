@@ -1,14 +1,14 @@
 'use client';
 
-import { useGalacticCredits } from "@/hooks/useGalacticCredits";
 import { useGameStore } from "@/store/gameStore";
 import { useShallow } from "zustand/react/shallow";
 import { useUser } from "@civic/auth-web3/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCreditsStore } from "@/store/creditsStore";
 
 export const Header = () => {
     const ship = useGameStore(useShallow(state => state.userData?.ship));
-    const { balance: galacticCredits, isLoading: creditsLoading } = useGalacticCredits();
+    const { balance: galacticCredits, isLoading: creditsLoading, } = useCreditsStore();
     const { user, signOut, authStatus } = useUser();
 
     const [isOpen, setIsOpen] = useState(false);
